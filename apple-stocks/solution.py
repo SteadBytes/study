@@ -2,11 +2,13 @@ import pytest
 
 
 def get_max_profit(stock_prices):
-    best = 0
-    for i, buy_price in enumerate(stock_prices):
-        for sell_price in stock_prices[i + 1 :]:
-            best = max(best, sell_price - buy_price)
-    return best
+    min_price = stock_prices[0]
+    max_profit = 0
+    for price in stock_prices:
+        min_price = min(min_price, price)
+        profit = price - min_price
+        max_profit = max(max_profit, profit)
+    return max_profit
 
 
 def test_given_example():

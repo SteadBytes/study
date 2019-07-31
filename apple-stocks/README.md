@@ -31,3 +31,12 @@ Brute force:
 - For each price calculate difference between each remaining price in list
 - Return highest pair
 - _O(n^2)_
+
+Improved:
+
+- Iterate through `stock_prices` once
+- Keep track of maximum possible profit so far
+  - Same as previous iteration
+  - Max profit by selling at the current iteration price
+    - Track minimum price so far to calculate
+- _O(n)_
