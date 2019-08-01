@@ -28,4 +28,14 @@ class BinaryTreeNode(object):
 Simple solution:
 
 - In-order traversal -> return second to last item
-- *O(n)*
+- _O(n)_
+
+Improved:
+
+- Second largest will be the node (in-order) previous to the largest:
+  - Case 1: Largest node has a left subtree -> 2nd largest is largest node in left subtree
+  - Case 2: Largest node has no children -> 2nd largest is parent of largest node
+- From root, follow right pointers
+  - If largest node is reached (no right node) and it has a left node return the largest node of the left subtree
+  - If largest node not reached (has a right node) and the right node has no left or right pointers return current node value
+- _O(h)_ where _h_ = height of tree
