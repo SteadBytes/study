@@ -32,7 +32,7 @@ Brute force:
 - Return highest pair
 - _O(n^2)_
 
-Improved:
+Improved (greedy):
 
 - Iterate through `stock_prices` once
 - Keep track of maximum possible profit so far
@@ -40,3 +40,6 @@ Improved:
   - Max profit by selling at the current iteration price
     - Track minimum price so far to calculate
 - _O(n)_
+- Return 0 if `stock_prices` < 2 elements
+  - Insufficient values to buy and sell
+  - Could raise an exception, however I have chosen to return 0 as a 'null object' pattern implementation
