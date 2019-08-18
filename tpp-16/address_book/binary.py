@@ -6,17 +6,35 @@ from typing import Iterable
 
 from models import Person
 
-PersonStruct = struct.Struct("50s50s15s10s50s50s10s36s")
+PERSON_STRUCT_FMT = "50s50s15s10s50s50s10s{}s36s"
 
 
 def from_bytes(buffer: bytes) -> Person:
-    return Person(
-        *(x.decode("utf-8").rstrip("\x00") for x in PersonStruct.unpack(buffer))
+    # calculate sizes of non-variable formats
+    before_fmt, after_fmt = PERSON_STRUCT_FMT.split("{}s")
+    before_start = struct.calcsize(before_fmt)
+    after_start = len(buffer) - struct.calcsize(after_fmt)
+
+    before, direction, after = (
+        buffer[:before_start],
+        buffer[before_start:after_start],
+        buffer[after_start:],
     )
+
+    # dynamically build struct format string for variable length field
+    direction_fmt = "{}s".format(len(direction))
+    data = (
+        struct.unpack(before_fmt, before)
+        + struct.unpack(direction_fmt, direction)
+        + struct.unpack(after_fmt, after)
+    )
+    return Person(*(x.decode("utf-8").rstrip("\x00") for x in data))
 
 
 def to_bytes(p: Person) -> bytes:
-    return PersonStruct.pack(*(s.encode("utf-8") for s in astuple(p)))
+    # dynamically add size to format for variable length directions field
+    fmt = PERSON_STRUCT_FMT.format(len(p.directions))
+    return struct.pack(fmt, *(s.encode("utf-8") for s in astuple(p)))
 
 
 def read_address_book(db: Path):

@@ -16,6 +16,7 @@ class Person:
     street: str
     town: str
     postcode: str
+    directions: str
     id: str = field(default_factory=lambda: str(uuid4()))
 
 
@@ -29,4 +30,5 @@ def generate_people(n: int) -> Iterable[Person]:
             fake.street_name(),
             fake.city(),
             fake.postalcode(),
+            fake.text() # random latin is about as useful as most directions
         )
