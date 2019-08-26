@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from faker import Faker
 
-fake = Faker()
+fake = Faker("en_GB")
 
 
 @dataclass
@@ -29,6 +29,6 @@ def generate_people(n: int) -> Iterable[Person]:
             fake.building_number(),
             fake.street_name(),
             fake.city(),
-            fake.postalcode(),
-            fake.text() # random latin is about as useful as most directions
+            fake.postcode(),
+            fake.text(),  # random latin is about as useful as most directions
         )
