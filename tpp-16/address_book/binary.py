@@ -2,7 +2,7 @@ import struct
 from dataclasses import astuple
 from functools import partial
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, List
 
 from .models import Person
 
@@ -43,13 +43,15 @@ def to_bytes(p: Person) -> Tuple[bytes, int]:
 RecordSizeStruct = struct.Struct("I")
 
 
-def read_address_book(db: Path):
+def read_address_book(db: Path) -> List[Person]:
     people = []
     with db.open("rb") as f:
         while True:
+            # each record preceded by its size in bytes, use to determine number
+            # of bytes to read from db for the entire record
             size_buf = f.read(RecordSizeStruct.size)
             if not size_buf:
-                break
+                break  # reached end of db
             record_size = RecordSizeStruct.unpack(size_buf)[0]
             people.append(from_bytes(f.read(record_size)))
     return people
