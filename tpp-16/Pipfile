@@ -7,6 +7,7 @@ verify_ssl = true
 black = "*"
 pep8 = "*"
 rope = "*"
+pytest = "*"
 
 [packages]
 faker = "*"

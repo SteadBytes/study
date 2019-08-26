@@ -4,7 +4,7 @@ from functools import partial
 from pathlib import Path
 from typing import Iterable
 
-from models import Person
+from .models import Person
 
 
 def from_dict(d: dict) -> Person:
