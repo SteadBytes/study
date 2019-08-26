@@ -6,7 +6,7 @@ from typing import Iterable
 
 from models import Person
 
-PERSON_STRUCT_FMT = "50s50s15s10s50s50s10s{}s36s"
+PERSON_STRUCT_FMT = "50s50s30s10s50s50s10s{}s36s"
 
 
 def from_bytes(buffer: bytes) -> Person:
