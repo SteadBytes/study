@@ -291,6 +291,8 @@ C(s) = (FTFFTFFFTT)
 
 Sequence of logical values represented as a _bitstring_:
 
+- **Bit vector**
+
 ```
   +-------------------+
 s |0 1 0 0 1 0 0 0 1 1|
