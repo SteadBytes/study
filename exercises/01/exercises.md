@@ -506,3 +506,20 @@ class TapeException(Enum):  # renamed to not collide with python Exception class
 
 tapestatus: Set[TapeException] = set()
 ```
+
+# 1.4
+
+Correct use of variant records can be checked at run time if the compiler generates appropriate code for runtime tests to verify that the type discriminator is consistent with any fields accessed on the record. For example:
+
+```pascal
+// variable c of type Coordinate
+// insert runtime test here to ensure c.kind == Cartesian
+c.x = 10.5
+```
+
+The above check is almost certainly superseded by compile time verification. Since the valid fields for each value of the type discriminator are specified the in type declaration, a compiler would be able to check for valid access.
+
+# 1.5
+
+Sequential files have _infinite_ cardinality - allowing for completely _dynamic_ data within a program. When using arrays, the data to be stored is known at compile time, whereas the data read from sequential files is known only at runtime. Sequential files also allow data to be _persisted_, allowing the results of a program to be stored after completion of program execution. This also allows the same data to be used in _multiple programs_ from the same sequential file.
+
