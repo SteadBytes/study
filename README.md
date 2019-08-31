@@ -1,3 +1,3 @@
 # Algorithms + Data Structures = Programs Notes/Exercises
 
-TODO:
+Notes and exercises from [Algorithms + Data Structures = Programs, Niklaus Wirth](https://dl.acm.org/citation.cfm?id=540030).
