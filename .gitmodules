@@ -1,0 +1,12 @@
+[submodule "clojure-for-the-brave-and-true"]
+	path = clojure-for-the-brave-and-true
+	url = git@github.com:SteadBytes/clojure-for-the-brave-and-true.git
+[submodule "sicp"]
+	path = sicp
+	url = git@github.com:SteadBytes/sicp.git
+[submodule "the-c-programming-language"]
+	path = the-c-programming-language
+	url = https://github.com/SteadBytes/the-c-programming-language
+[submodule "algorithms-data-structures-programs"]
+	path = algorithms-data-structures-programs
+	url = git@github.com:SteadBytes/algorithms-data-structures-programs.git
