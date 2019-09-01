@@ -10,18 +10,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "hash_table.h"
 
 #define MAXWORD 100
-
-#define N_REPLACEMENTS 4
-char *A[] = {"hobbit", "nasty", "in", "lots"};
-char *B[] = {"man", "ugly", "on", "loads"};
 
 /**
  * Transform ifp to ofp by replacing all occurences of word A[i] with
  * corresponding word B[i]
  */
-void replace(FILE *ifp, FILE *ofp)
+void replace(FILE *ifp, FILE *ofp, ht_t *replacements)
 {
     char word[MAXWORD];
     char *w = word;
@@ -31,21 +28,8 @@ void replace(FILE *ifp, FILE *ofp)
         if (!isalpha(c))
         {
             *w++ = '\0';
-            // TODO: Do this with hash table from A->B
-            int matched = 0;
-            for (int i = 0; i < N_REPLACEMENTS; i++)
-            {
-                if (strcmp(word, A[i]) == 0)
-                {
-                    fputs(B[i], ofp);
-                    matched = 1;
-                    break;
-                }
-            }
-            if (!matched)
-            {
-                fputs(word, ofp);
-            }
+            char *rep = ht_get(replacements, word);
+            fputs(rep == NULL ? word : rep, ofp);
             fputc(c, ofp);
             w = word;
         }
@@ -56,12 +40,27 @@ void replace(FILE *ifp, FILE *ofp)
     }
 }
 
+ht_t *init_replacements(char *A[], char *B[], unsigned int len)
+{
+    /* initialize replacements table */
+    ht_t *hash_table = ht_alloc();
+    for (int i = 0; i < len; i++)
+    {
+        ht_set(hash_table, A[i], B[i]);
+    }
+    return hash_table;
+}
+
 int main(int argc, char *argv[])
 {
+    char *A[] = {"hobbit", "nasty", "in", "lots"};
+    char *B[] = {"man", "ugly", "on", "loads"};
+    ht_t *hash_table = init_replacements(A, B, 4);
+
     /* no args: stdin -> stdout */
     if (argc == 1)
     {
-        replace(stdin, stdout);
+        replace(stdin, stdout, hash_table);
     }
     else
     {
@@ -88,6 +87,6 @@ int main(int argc, char *argv[])
             ofp = stdout;
         }
 
-        replace(ifp, ofp);
+        replace(ifp, ofp, hash_table);
     }
 }

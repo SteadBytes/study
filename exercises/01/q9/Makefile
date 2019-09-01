@@ -1,5 +1,5 @@
 CC = /usr/bin/gcc 
-DEPS =
+DEPS = hash_table.c
 
 all: clean replace
 
