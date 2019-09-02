@@ -363,67 +363,7 @@ I'm going to swap between languages a bit to better represent the type specifica
 
 ### _sex_, _Boolean_ and _weekday_
 
-```python
-from enum import Enum
-
-class Sex(Enum):
-    MALE = 1
-    FEMALE = 2
-
-class Boolean(Enum):
-    FALSE = 0
-    TRUE = 1
-
-# or just use actual bool types
-a_bool = True
-another_bool = False
-
-class Weekday(Enum):
-    MONDAY = 0
-    TUESDAY = 1
-    WEDNESDAY = 2
-    THURSDAY = 3
-    FRIDAY = 4
-    SATURDAY = 5
-    SUNDAY = 6
-```
-
-### _letter_, _digit_ and _officer_
-
-```python
-from enum import Enum
-
-def subrange(base, low, high):
-    if low > high:
-        raise ValueError(f"low must be <= high")
-
-    class SubRange(base):
-        def __new__(cls, value):
-            if low <= value and value <= high:
-                x = base.__new__(cls, value)
-                return x
-            else:
-                raise ValueError(f"value {value} not in range {low}..{high}")
-
-    return SubRange
-
-
-Letter = subrange(str, "A", "Z")
-
-Digit = subrange(int, 0, 9)
-
-
-class Officer(Enum):
-    LIEUTENANT = 0
-    CAPTAIN = 1
-    MAJOR = 2
-    LIEUTENANT_COLONEL = 3
-    COLONEL = 4
-    BRIGADIER = 5
-    MAJOR_GENERAL = 6
-    LIEUTENANT_GENERAL = 7
-    GENERAL = 8
-```
+See [q2.py](02/q2.py)
 
 ### _row_, _alfa_
 
@@ -434,38 +374,7 @@ char alfa[10];
 
 ### _complex_, _Date_, _Person_, _Coordinate_
 
-```python
-class Complex(NamedTuple):
-    re: float
-    im: float
-
-
-Day = subrange(int, 1, 31)
-Month = subrange(int, 1, 12)
-Year = subrange(int, 1, 2000)
-
-
-class Date:
-    def __init__(self, day: Day, month: Month, year: Year):
-        self.day = Day(day)
-        self.month = Month(month)
-        self.year = Year(year)
-
-
-class MarriageStatus(Enum):
-    SINGLE = 0
-    MARRIED = 1
-    WIDOWED = 2
-    DIVORCED = 3
-
-
-class Person(NamedTuple):
-    name: str
-    firstname: str
-    birthdate: Date
-    sex: Sex
-    marstatus: MarriageStatus
-```
+See [q2.py](02/q2.py)
 
 ```c
 enum CoordinateKind {
@@ -492,20 +401,7 @@ struct Coordinate {
 
 ### _charset_ and _tapestatus_
 
-```python
-# Python has no built in char type -> use length 1 strings
-charset: Set[str] = set()
-
-
-class TapeException(Enum):  # renamed to not collide with python Exception class
-    unloaded = 0
-    manual = 1
-    parity = 2
-    skew = 3
-
-
-tapestatus: Set[TapeException] = set()
-```
+See [q2.py](02/q2.py)
 
 # 1.4
 
@@ -523,3 +419,6 @@ The above check is almost certainly superseded by compile time verification. Sin
 
 Sequential files have _infinite_ cardinality - allowing for completely _dynamic_ data within a program. When using arrays, the data to be stored is known at compile time, whereas the data read from sequential files is known only at runtime. Sequential files also allow data to be _persisted_, allowing the results of a program to be stored after completion of program execution. This also allows the same data to be used in _multiple programs_ from the same sequential file.
 
+# 1.9
+
+See [replace.c](09/replace.c)
