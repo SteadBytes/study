@@ -10,6 +10,21 @@ def subrange(base, low, high):
             else:
                 raise ValueError(f"value {value} not in range {low}..{high}")
 
+        def __add__(self, other):
+            return self.__new__(SubRange, base(self) + other)
+
+        def __sub__(self, other):
+            return self.__new__(SubRange, base(self) - other)
+
+        def __mul__(self, other):
+            return self.__new__(SubRange, base(self) * other)
+
+        def __truediv__(self, other):
+            return self.__new__(SubRange, base(self) / other)
+
+        def __floordiv__(self, other):
+            return self.__new__(SubRange, base(self) / other)
+
     return SubRange
 
 
