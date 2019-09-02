@@ -1,1 +1,7 @@
 .vscode/
+
+# general Python
+*.py[cod]
+__pycache__/
+.hypothesis
+.pytest_cache
