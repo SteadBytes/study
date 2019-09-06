@@ -422,3 +422,127 @@ Sequential files have _infinite_ cardinality - allowing for completely _dynamic_
 # 1.9
 
 See [replace.c](09/replace.c)
+
+# 1.13
+
+[binary_search.py](13/binary_search.py) contains Python implementations and tests
+for each of the binary search algorithms examined below.
+
+Variables:
+
+```
+var i, j, k: integer;
+  a: array[1 .. N] of T; # constant N > 0
+  x: T
+```
+
+From 1.17:
+
+```
+i := 1; j := N;
+repeat k := (i + j) div 2;
+  if x > a[k] then i := k + 1 else j := k - 1
+until (a[k] == x) V (i > j)
+```
+
+At each iteration, if `x` exists within `a`: `i <= x <= j`
+
+Invariant at entrance of `repeat` statement:
+
+```
+a[h] < x for h = 1...i - 1
+a[h] >= x for h = j + 1...N
+```
+
+Or
+
+```
+a[i] <= x <= a[j]
+```
+
+- "At any iteration of the loop, `i` and `j` enclose `x`
+
+- Base case: When program begins, `i=1` and `j=N` -> `i` and `j` enclose _all_ values in the array -> `x` **must** be between `i` and `j`
+- Inductive step:
+
+  - Case 1: `x > a[k]` -> `x` must be between `k` and `j` -> set `i` to `k + 1` to continue next iteration on the _smaller subarray_ above position `k`.
+  - Case 2: `x < a[k]` -> `x` must be between `i` and `k` -> set `j` to `k - 1` to continue next iteration on the _smaller subarray_ below position `k`.
+
+- In both inductive cases, the invariant `a[i] <= x <= a[j]` holds
+
+- Each iteration operates on a _strictly smaller subarray_, where `i` always increases and `j` always decreases -> `i` and `j` will _converge_ at a single location where `i = j` -> `a[i] <= x <= a[j]`
+
+- Termination:
+  - Case 1: `a[k] == x` -> value found
+  - Case 2: `i > j` -> value not found, `i` and `j` have fully converged, covering all elements of the array without the predicate of case 1 being true.
+
+Program A:
+
+```
+i := 1; j:= N;
+repeat k := (i + j) div 2;
+  if a[k] < x then i:= k else j := k
+until (a[k] == x) V (i >= j)
+```
+
+- Base case: When program begins, `i=1` and `j=N` -> `i` and `j` enclose _all_ values in the array -> `x` **must** be between `i` and `j`
+- Inductive step:
+
+  - Case 1: `x > a[k]` -> `x` must be between `k` and `j` -> set `j` to `k`
+  - Case 2: `x < a[k]` -> `x` must be between `i` and `k` -> set `i` to `k`
+
+- Termination:
+
+  - Case 1: `a[k] == x` -> value found
+  - Case 2: `i >= j` -> value not found
+
+- Each iteration **does not** operate on a strictly smaller subarray, as `i` and `j` will not converge at a single location where `i = j`. In the case that `x` is at position `N` (the last element), each iteration will set `i` to `k` at `a[k] < x` will be true. When `i` reaches `N-1`, `k` will be `(N-1 + N) div 2 = N - 1`, `a[k] < x` will still be false and `i` will be set to `k`. Since `i = N - 1` and `k = N - 1` the values of `i` and `j` won't change and the loop will never terminate.
+
+Algorithm is **incorrect**
+
+Program B:
+
+```
+i := 1; j :=N;
+repeat k := (i + j) div 2;
+  if x <= a[k] then j := k - 1;
+  if a[k] <= x then i:= k + 1
+until i > j
+```
+
+- Base case: When program begins, `i=1` and `j=N` -> `i` and `j` enclose _all_ values in the array -> `x` **must** be between `i` and `j`
+
+- Inductive step:
+  - Case 1: `x <= a[k]` -> `x` must be present either at `k` or between `i` and `k` -> set `j = k - 1` to operate on smaller subarray of _lower_ values on the next iteration
+  - Case 2: `a[k] <= x` -> `x` must be present either at `k` or between `k` and `j` -> set `i = k + 1` to operate on smaller subarray of _higher_ values on the next iteration
+- Termination `i > j`:
+  - Case 1: `a[k] == x` -> `x` found -> both predicates of the inductive step are true, causing `i > j`:
+    - Entering the loop: `i < k < j`
+    - `k = i + j div 2`
+    - Inductive step case 1 sets `j = k - 1`
+    - Inductive step case 2 sets `i = k + 1`
+    - `i > j = (k + 1) > (k - 1) = true`
+  - Case 2: `i` and `j` have converged to where `i = j` -> `x` not found
+    - Entering the loop: `i = j`, `k = (i + j) / 2 = i = j`
+    - If `x < a[k]` -> case 1 from inductive step sets `j = k - 1` -> terminate as `i > j = i > k - 1 = i > i - 1 = true`
+    - If `a[k] < x` -> case 2 from inductive step sets `i = k + 1` -> terminate as `i > j = k + 1 > j = j + 1 > j = true`
+
+Algorithm is **correct**
+
+Program C:
+
+```
+i := 1; j := N;
+repeat k := (i + j) div 2;
+  if x < a[k] then j := k else i := k + 1
+until i >= j
+```
+
+- Base case: When program begins, `i=1` and `j=N` -> `i` and `j` enclose _all_ values in the array -> `x` **must** be between `i` and `j`
+
+- Inductive step:
+
+  - Case 1: `x < a[k]` -> `x` must be between `i` and `k` i.e. a position _prior_ to `k`. Setting `j = k` will continue the search on a subarray _including_ `k`, meaning that the case where `x == a[j]` from the loop invariant `a[i] <= x <= a[k]` is not possible.
+  - Case 2: `x >= a[k]` -> `x` must be either at position `k` or between `k` and `j`. Setting `i = k + 1` will continue the search on a subarray _not including_ `k`. Thus, if `x == a[k]`, the next iteration will **not** uphold the loop invariant `a[i] <= x <= a[k]`
+
+Algorithm is **incorrect**
