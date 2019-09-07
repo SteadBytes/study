@@ -1,0 +1,7 @@
+*.djvu
+
+__pycache__
+.hypothesis
+.pytest_cache
+
+*.out
