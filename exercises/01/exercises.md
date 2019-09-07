@@ -546,3 +546,21 @@ until i >= j
   - Case 2: `x >= a[k]` -> `x` must be either at position `k` or between `k` and `j`. Setting `i = k + 1` will continue the search on a subarray _not including_ `k`. Thus, if `x == a[k]`, the next iteration will **not** uphold the loop invariant `a[i] <= x <= a[k]`
 
 Algorithm is **incorrect**
+
+# 1.14
+
+See [hits.py](./14/hits.py)
+
+Use JSON instead of pascal typed file:
+
+```JSON
+{
+  "name": "steadman",
+  "s": "male",
+  "firstname": "ben",
+  "age": 21,
+  "choice": [1, 2, 3, 4, 5]
+}
+```
+
+TODO: Implement validation on the types i.e. hits should be between `0..30` e.t.c
