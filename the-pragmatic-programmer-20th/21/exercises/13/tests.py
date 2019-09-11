@@ -32,6 +32,21 @@ def test_CAMEL_RE_no_match(s):
 
 
 @pytest.mark.parametrize(
+    "s,match_groups",
+    [(w, [cf.MatchGroup(0, len(w))]) for w in CAMEL_CASE_WORDS]
+    + [(w, []) for w in NOT_CAMEL_CASE_WORDS]
+    + [
+        (
+            "System.out.println(Arrays.toString(myArray))",
+            [cf.MatchGroup(26, 34), cf.MatchGroup(35, 42)],
+        )
+    ],
+)
+def test_find_match_groups(s, match_groups):
+    assert cf.find_match_groups(s) == match_groups
+
+
+@pytest.mark.parametrize(
     "s,match_list",
     [
         (

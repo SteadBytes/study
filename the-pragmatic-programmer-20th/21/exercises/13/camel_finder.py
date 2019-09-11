@@ -42,9 +42,13 @@ def pretty_match(m: Match, filename: str = None):
     return "".join([f"{pretty_name}\033[32m{m.lineno}\033[m:"] + l)
 
 
+def find_match_groups(s: str):
+    return [MatchGroup(*m.span()) for m in CAMEL_RE.finditer(s)]
+
+
 def find_camel(lines: Iterable[str]) -> Generator[MatchGroup, None, None]:
     for i, line in enumerate(lines):
-        groups = [MatchGroup(*m.span()) for m in CAMEL_RE.finditer(line)]
+        groups = find_match_groups(line)
         if groups:
             yield Match(i, groups, line)
 
