@@ -36,9 +36,22 @@ def test_CAMEL_RE_no_match(s):
     [
         (
             CAMEL_CASE_WORDS,
-            [cf.Match(i, 0, len(w), w) for i, w in enumerate(CAMEL_CASE_WORDS)],
+            [
+                cf.Match(i, [cf.MatchGroup(0, len(w))], w)
+                for i, w in enumerate(CAMEL_CASE_WORDS)
+            ],
         ),
         (NOT_CAMEL_CASE_WORDS, []),
+        (
+            ["System.out.println(Arrays.toString(myArray))"],
+            [
+                cf.Match(
+                    0,
+                    [cf.MatchGroup(26, 34), cf.MatchGroup(35, 42)],
+                    "System.out.println(Arrays.toString(myArray))",
+                )
+            ],
+        ),
         (
             [
                 "/**\n",
@@ -84,21 +97,23 @@ def test_CAMEL_RE_no_match(s):
             ],
             [
                 cf.Match(
-                    lineno=24, start=15, end=23, line="\tpublic Object getValue() {\n"
+                    lineno=24,
+                    groups=[cf.MatchGroup(15, 23)],
+                    line="\tpublic Object getValue() {\n",
                 ),
                 cf.Match(
-                    lineno=28, start=17, end=24, line="\tpublic ListNode getNext() {\n"
+                    lineno=28,
+                    groups=[cf.MatchGroup(17, 24)],
+                    line="\tpublic ListNode getNext() {\n",
                 ),
                 cf.Match(
                     lineno=32,
-                    start=13,
-                    end=21,
+                    groups=[cf.MatchGroup(13, 21)],
                     line="\tpublic void setValue(Object value) {\n",
                 ),
                 cf.Match(
                     lineno=36,
-                    start=13,
-                    end=20,
+                    groups=[cf.MatchGroup(13, 20)],
                     line="\tpublic void setNext(ListNode next) {\n",
                 ),
             ],
@@ -109,17 +124,49 @@ def test_find_camel(s, match_list):
     assert list(cf.find_camel(s)) == match_list
 
 
-def test_pretty_match_no_filename():
-    match = cf.Match(lineno=24, start=15, end=23, line="\tpublic Object getValue() {\n")
-    assert (
-        cf.pretty_match(match)
-        == "\033[32m24\033[m:\033[32m15\033[m:\tpublic Object \033[31mgetValue\033[m() {\n"
-    )
+@pytest.mark.parametrize(
+    "m,expected",
+    [
+        (
+            cf.Match(24, [cf.MatchGroup(15, 23)], "\tpublic Object getValue() {"),
+            "\033[32m24\033[m:\tpublic Object \033[31mgetValue\033[m() {",
+        ),
+        (
+            cf.Match(
+                0,
+                [cf.MatchGroup(26, 34), cf.MatchGroup(35, 42)],
+                "System.out.println(Arrays.toString(myArray))",
+            ),
+            "\033[32m0\033[m:System.out.println(Arrays.\033[31mtoString\033[m(\033[31mmyArray\033[m))",
+        ),
+    ],
+)
+def test_pretty_match_no_filename(m, expected):
+    assert cf.pretty_match(m) == expected
 
 
-def test_pretty_match_with_filename():
-    match = cf.Match(lineno=24, start=15, end=23, line="\tpublic Object getValue() {\n")
-    assert (
-        cf.pretty_match(match, filename="data/LinkedList.java")
-        == "\033[35mdata/LinkedList.java\033\033[32m24\033[m:\033[32m15\033[m:\tpublic Object \033[31mgetValue\033[m() {\n"
-    )
+@pytest.mark.parametrize(
+    "m,filename,expected",
+    [
+        (
+            cf.Match(
+                lineno=24,
+                groups=[cf.MatchGroup(15, 23)],
+                line="\tpublic Object getValue() {\n",
+            ),
+            "data/LinkedList.java",
+            "\033[35mdata/LinkedList.java\033[m:\033[32m24\033[m:\tpublic Object \033[31mgetValue\033[m() {\n",
+        ),
+        (
+            cf.Match(
+                0,
+                [cf.MatchGroup(26, 34), cf.MatchGroup(35, 42)],
+                "System.out.println(Arrays.toString(myArray))",
+            ),
+            "data/ArrayPrint.java",
+            "\033[35mdata/ArrayPrint.java\033[m:\033[32m0\033[m:System.out.println(Arrays.\033[31mtoString\033[m(\033[31mmyArray\033[m))",
+        ),
+    ],
+)
+def test_pretty_match_with_filename(m, filename, expected):
+    assert cf.pretty_match(m, filename=filename) == expected

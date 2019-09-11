@@ -20,29 +20,50 @@ def err_exit(msg, status=1):
     exit(status)
 
 
-class Match(NamedTuple):
-    lineno: int
+class MatchGroup(NamedTuple):
     start: int
     end: int
+
+
+class Match(NamedTuple):
+    lineno: int
+    groups: List[MatchGroup]
     line: str
 
 
-def pretty_match(m: Match, filename: str = None):
-    pretty_name = f"\033[35m{filename}\033" if filename else ""
-    return (
-        f"{pretty_name}\033[32m{m.lineno}\033[m:"
-        f"\033[32m{m.start}\033[m:{m.line[:m.start]}"
-        f"\033[31m{m.line[m.start:m.end]}\033[m{m.line[m.end:]}"
-    )
+def pretty_match(m: Match, filename: str = None) -> str:
+    """
+    Build a 'pretty' string representation of `m`, with coloured text, line numbers
+    and optionally prefixed with `filename`.
+
+    Colours:
+        - Line numbers = green
+        - Matches = red
+        - Filenames = purple
+        - Non-matching text = white
+    """
+    pretty_name = f"\033[35m{filename}\033[m:" if filename else ""
+    l = []
+    prev = 0
+    for g in m.groups:
+        l.append(f"{m.line[prev:g.start]}\033[31m{m.line[g.start:g.end]}\033[m")
+        prev = g.end
+    l.append(m.line[prev:])
+    return "".join([f"{pretty_name}\033[32m{m.lineno}\033[m:"] + l)
 
 
 def find_camel(lines: Iterable[str]) -> Generator[Match, None, None]:
     for i, line in enumerate(lines):
-        for m in CAMEL_RE.finditer(line):
-            yield Match(i, *m.span(), line)
+        groups = [MatchGroup(*m.span()) for m in CAMEL_RE.finditer(line)]
+        if groups:
+            yield Match(i, groups, line)
 
 
 def main(files: List[Path]):
+    """
+    Print a report on the locations of all camelCase strings in `file`. See
+    `pretty_match` for output format.
+    """
     show_filenames = len(files) > 1
     for file in files:
         with file.open() as f:
