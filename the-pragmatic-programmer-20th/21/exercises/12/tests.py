@@ -96,25 +96,19 @@ def test_CAMEL_RE_no_match(s):
                 "}",
             ],
             [
+                cf.Match(24, [cf.MatchGroup(15, 23)], "\tpublic Object getValue() {\n"),
                 cf.Match(
-                    lineno=24,
-                    groups=[cf.MatchGroup(15, 23)],
-                    line="\tpublic Object getValue() {\n",
+                    28, [cf.MatchGroup(17, 24)], "\tpublic ListNode getNext() {\n"
                 ),
                 cf.Match(
-                    lineno=28,
-                    groups=[cf.MatchGroup(17, 24)],
-                    line="\tpublic ListNode getNext() {\n",
+                    32,
+                    [cf.MatchGroup(13, 21)],
+                    "\tpublic void setValue(Object value) {\n",
                 ),
                 cf.Match(
-                    lineno=32,
-                    groups=[cf.MatchGroup(13, 21)],
-                    line="\tpublic void setValue(Object value) {\n",
-                ),
-                cf.Match(
-                    lineno=36,
-                    groups=[cf.MatchGroup(13, 20)],
-                    line="\tpublic void setNext(ListNode next) {\n",
+                    36,
+                    [cf.MatchGroup(13, 20)],
+                    "\tpublic void setNext(ListNode next) {\n",
                 ),
             ],
         ),
@@ -149,11 +143,7 @@ def test_pretty_match_no_filename(m, expected):
     "m,filename,expected",
     [
         (
-            cf.Match(
-                lineno=24,
-                groups=[cf.MatchGroup(15, 23)],
-                line="\tpublic Object getValue() {\n",
-            ),
+            cf.Match(24, [cf.MatchGroup(15, 23)], "\tpublic Object getValue() {\n"),
             "data/LinkedList.java",
             "\033[35mdata/LinkedList.java\033[m:\033[32m24\033[m:\tpublic Object \033[31mgetValue\033[m() {\n",
         ),
