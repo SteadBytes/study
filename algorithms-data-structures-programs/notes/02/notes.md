@@ -109,3 +109,47 @@ _M<sup>i</sup>_ = number moves (assignments of items) in the *i*th sift
 
 Already sorted list -> _C<sub>min</sub>/M<sub>min</sub>_
 Reverse order list -> _C<sub>max</sub>/M<sub>max</sub>_
+
+## 2.2.2 Sorting by Straight Selection
+
+1. Select the item with the least key
+2. Exchange it with the first item a<sub>1</sub>
+3. Repeat w/ remaining _n - 1_, then _n -2_... items until one item (largest) is left.
+
+Considers _all_ items of the _source_ array to find item with least key and place it as the _one_ next item of _destination_ sequence.
+
+```
+for i := 1 to n - 1 do
+    begin "assign index of least item of a[i:n] to k";
+    "exchange a[i] and a[k]"
+```
+
+See [straight_selection.py](./code/straight_selection.py)
+
+```
+procedure straightselection;
+    var i, j, k: index; x: item;
+begin for i := 1 to n - 1 do
+    begin k := i; x := a[i];
+        for j := i + 1 to n do
+            if a[j].key < x.key then
+            begin k:= j; x:= a[j]
+            end;
+            a[k] := a[i]; a[i] := x;
+    end
+end
+```
+
+### Analysis
+
+- _C = 1/2(n<sup>2</sup> - n)_
+
+  - **Independent** of initial key ordering
+
+- _M<sub>min</sub>3(n - 1)_
+  - Keys initially ordered
+- _M<sub>max</sub>trunc(n<sup>2</sup>/4) + 3(n - 1)_
+  - Keys initially reverse ordered
+- _M<sub>ave</sub>_ -> look in book pg 64 fig 2.7 (complex harmonic numbers that I'm not making note of :smile:)
+
+In general better than straight insertion, unless keys are initially sorted/almost sorted in which case straight insertion is slightly faster.
