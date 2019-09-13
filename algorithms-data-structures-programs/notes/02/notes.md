@@ -153,3 +153,46 @@ end
 - _M<sub>ave</sub>_ -> look in book pg 64 fig 2.7 (complex harmonic numbers that I'm not making note of :smile:)
 
 In general better than straight insertion, unless keys are initially sorted/almost sorted in which case straight insertion is slightly faster.
+
+## 2.2.3 Sorting by Straight Exchange
+
+Compare _and_ exchange pairs of **adjacent** items until sorted.
+
+See [straight_exchange.py](./code/straight_exchange.py)
+
+```
+procedure bubblesort;
+    var i, j: index; x: item;
+begin for i := 2 to n do
+    begin for j := n downto i do
+        if a[j - 1].key > a[j].key then
+        begin x := a[j - 1]; a[j - 1]: = a[j]; a[j] := x
+        end
+    end
+end {bubblesort}
+```
+
+Can be improved by tracking whether any exchanges made in the previous pass -> list sorted -> terminate
+
+```
+procedure bubblesort;
+    var i, j: index; x: item; swapped: boolean;
+begin for i := 2 to n do
+    swapped = false
+    begin for j := n downto i do
+        if a[j - 1].key > a[j].key then
+        begin x := a[j - 1]; a[j - 1]: = a[j]; a[j] := x; swapped = true;
+        end
+    end
+    if not swapped then
+        break;
+end {bubblesort}
+```
+
+### Analysis
+
+- _C = 1/2(n<sup>2</sup> - n)_
+
+- _M<sub>min</sub> = 0_
+- _M<sub>ave</sub> = 3/4(n<sup>2</sup> - n)_
+- _M<sub>max</sub> = 3/2(n<sup>2</sup> - n)_
