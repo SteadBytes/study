@@ -2,22 +2,58 @@ import pytest
 
 import camel_finder as cf
 
-CAMEL_CASE_WORDS = [
-    "camelCase",
-    "camelCamelCase",
-    "camel1Case",
-    "camel1234CamelCase",
-    "camelCase1234",
-    "camelCase1234D",
-]
+CAMEL_CASE_WORDS = {
+    "camelCase": "camel_case",
+    "camelCamelCase": "camel_camel_case",
+    "camel1Case": "camel1_case",
+    "camel1234CamelCase": "camel1234_camel_case",
+    "camelCase1234": "camel_case1234",
+    "camelCase1234D": "camel_case1234_d",
+}
 
-NOT_CAMEL_CASE_WORDS = [
-    "word",
-    "PascalCase",
-    "snake_case",
-    "multiple words",
-    "word!",
-    "sort_of_snake_Case",
+NOT_CAMEL_CASE_WORDS = ["word", "PascalCase", "snake_case", "multiple words", "word!"]
+
+JAVA_LINES = [
+    "/**\n",
+    " * Singly linked list\n",
+    " */\n",
+    "public class ListNode {\n",
+    "\n",
+    "\tprivate Object value;\n",
+    "\n",
+    "\tprivate ListNode next;\n",
+    "\n",
+    "\t/**\n",
+    "\t * Default constructor for an empty node\n",
+    "\t */\n",
+    "\tpublic ListNode() {\n",
+    "\t\tthis(null, null);\n",
+    "\t}\n",
+    "\n",
+    "\t/**\n",
+    "\t * Constructor to create node with data and next pointer\n",
+    "\t */\n",
+    "\tpublic ListNode(Object value, ListNode next) {\n",
+    "\t\tthis.value = value;\n",
+    "\t\tthis.next = next;\n",
+    "\t}\n",
+    "\n",
+    "\tpublic Object getValue() {\n",
+    "\t\treturn value;\n",
+    "\t}\n",
+    "\n",
+    "\tpublic ListNode getNext() {\n",
+    "\t\treturn next;\n",
+    "\t}\n",
+    "\n",
+    "\tpublic void setValue(Object value) {\n",
+    "\t\tthis.value = value;\n",
+    "\t}\n",
+    "\n",
+    "\tpublic void setNext(ListNode next) {\n",
+    "\t\tthis.next = next;\n",
+    "\t}\n",
+    "}",
 ]
 
 
@@ -68,48 +104,7 @@ def test_find_match_groups(s, match_groups):
             ],
         ),
         (
-            [
-                "/**\n",
-                " * Singly linked list\n",
-                " */\n",
-                "public class ListNode {\n",
-                "\n",
-                "\tprivate Object value;\n",
-                "\n",
-                "\tprivate ListNode next;\n",
-                "\n",
-                "\t/**\n",
-                "\t * Default constructor for an empty node\n",
-                "\t */\n",
-                "\tpublic ListNode() {\n",
-                "\t\tthis(null, null);\n",
-                "\t}\n",
-                "\n",
-                "\t/**\n",
-                "\t * Constructor to create node with data and next pointer\n",
-                "\t */\n",
-                "\tpublic ListNode(Object value, ListNode next) {\n",
-                "\t\tthis.value = value;\n",
-                "\t\tthis.next = next;\n",
-                "\t}\n",
-                "\n",
-                "\tpublic Object getValue() {\n",
-                "\t\treturn value;\n",
-                "\t}\n",
-                "\n",
-                "\tpublic ListNode getNext() {\n",
-                "\t\treturn next;\n",
-                "\t}\n",
-                "\n",
-                "\tpublic void setValue(Object value) {\n",
-                "\t\tthis.value = value;\n",
-                "\t}\n",
-                "\n",
-                "\tpublic void setNext(ListNode next) {\n",
-                "\t\tthis.next = next;\n",
-                "\t}\n",
-                "}",
-            ],
+            JAVA_LINES,
             [
                 cf.Match(24, [cf.MatchGroup(15, 23)], "\tpublic Object getValue() {\n"),
                 cf.Match(
@@ -175,3 +170,29 @@ def test_pretty_match_no_filename(m, expected):
 )
 def test_pretty_match_with_filename(m, filename, expected):
     assert cf.pretty_match(m, filename=filename) == expected
+
+
+@pytest.mark.parametrize("s,expected", CAMEL_CASE_WORDS.items())
+def test_convert_camel_word(s, expected):
+    assert cf.convert_camel_word(s) == expected
+
+
+@pytest.mark.parametrize("s", JAVA_LINES)
+def test_convert_camel_line_result_has_no_camel_matches(s):
+    converted = cf.convert_camel_line(s)
+    assert not cf.find_match_groups(converted)
+
+
+@pytest.mark.parametrize(
+    "s",
+    NOT_CAMEL_CASE_WORDS
+    + [
+        "a sentence without camel case",
+        "a sentence with snake_case",
+        "a sentence with numbers 1234",
+        "a sentence with radnom punctuation !?@?#';",
+    ],
+)
+def test_convert_camel_line_noop_if_no_camel(s):
+    converted = cf.convert_camel_line(s)
+    assert converted == s
