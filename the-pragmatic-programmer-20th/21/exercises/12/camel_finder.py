@@ -8,11 +8,22 @@ Yes I'm aware this can be achieved with a grep one-liner.
 import re
 import sys
 from pathlib import Path
-from typing import Generator, Iterable, List, NamedTuple, Tuple
+from typing import Generator, Iterable, List, NamedTuple
 
-# matches valid camelCase strings
+# matches valid lower camelCase strings according to the examples in Google
+# Java style guide definition https://google.github.io/styleguide/javaguide.html#s5.3-camel-case
 # see tests for examples of matching/non-matching strings
-CAMEL_RE = re.compile(r"\b[a-z]+((\d)|([A-Z0-9][a-z0-9]+))+([A-Z])?")
+CAMEL_RE = re.compile(
+    (
+        # 1st character must be lowercase
+        r"\b[a-z]+"
+        # followed by a single digit
+        # OR uppercase character/number followed by lower case characters or number
+        r"((\d)|([A-Z0-9][a-z0-9]+))"
+        # final character *may* be uppercase
+        r"+([A-Z])?"
+    )
+)
 
 
 def err_exit(msg, status=1):
@@ -33,8 +44,8 @@ class Match(NamedTuple):
 
 def pretty_match(m: Match, filename: str = None) -> str:
     """
-    Build a 'pretty' string representation of `m`, with coloured text, line numbers
-    and optionally prefixed with `filename`.
+    Build a 'pretty' string representation of `m`, with coloured text and line
+    numbers; optionally prefixed with `filename`.
 
     Colours:
         - Line numbers = green
