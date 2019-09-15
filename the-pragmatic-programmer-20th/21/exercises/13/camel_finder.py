@@ -1,17 +1,21 @@
 #! /usr/bin/env python3
 
 """
-Scans source files for camelCase strings and reports on their locations.
-Yes I'm aware this can be achieved with a grep one-liner.
+Scan source files for camelCase strings, reporting (grep style) on locations or
+converting to snake_case.
+
+During conversion, orginal files are renamed with a ".backup" extension.
+
+Yes I'm aware this can probably be achieved with a bash one-liner.
 """
 
+import argparse
 import re
 import sys
 from pathlib import Path
 from typing import Generator, Iterable, List, NamedTuple, Optional
 
-
-# matches valid camelCase strings according to the *lowercase* examples in Google
+# matches valid lower camelCase strings according to the examples in Google
 # Java style guide definition https://google.github.io/styleguide/javaguide.html#s5.3-camel-case
 # see tests for examples of matching/non-matching strings
 CAMEL_RE = re.compile(r"\b[a-z]+((\d)|([A-Z0-9][a-z0-9]+))+([A-Z])?")
@@ -40,7 +44,17 @@ class Match(NamedTuple):
     line: str
 
 
-def pretty_match(m: Match, filename: str = None):
+def pretty_match(m: Match, filename: str = None) -> str:
+    """
+    Build a 'pretty' string representation of `m`, with coloured text, line numbers
+    and optionally prefixed with `filename`.
+
+    Colours:
+        - Line numbers = green
+        - Matches = red
+        - Filenames = purple
+        - Non-matching text = white
+    """
     pretty_name = f"\033[35m{filename}\033[m:" if filename else ""
     l = []
     prev = 0
@@ -51,7 +65,7 @@ def pretty_match(m: Match, filename: str = None):
     return "".join([f"{pretty_name}\033[32m{m.lineno}\033[m:"] + l)
 
 
-def find_camel(lines: Iterable[str]) -> Generator[MatchGroup, None, None]:
+def find_camel(lines: Iterable[str]) -> Generator[Match, None, None]:
     for i, line in enumerate(lines):
         groups = find_match_groups(line)
         if groups:
@@ -59,6 +73,10 @@ def find_camel(lines: Iterable[str]) -> Generator[MatchGroup, None, None]:
 
 
 def report_camel(file: Path, show_filenames=False):
+    """
+    Print a report on the locations of all camelCase strings in `file`. See
+    `pretty_match` for output format.
+    """
     with file.open() as f:
         for m in find_camel(f):
             print(pretty_match(m, filename=str(file) if show_filenames else None))
@@ -85,12 +103,15 @@ def convert_camel(lines: Iterable[str]) -> Generator[str, None, None]:
 
 
 def transform_camel(file: Path):
-    orig_name = str(file)
-    file.rename(str(file) + ".backup")
-    transformed_file = Path(orig_name)
-    with file.open() as source:
-        with transformed_file.open() as dest:
-            dest.writelines(convert_camel(dest))
+    """
+    Transform all occurences of camelCase strings in `file` to snake_case. The
+    original file is renamed with a ".backup" extension to prevent data loss.
+    """
+    original = Path(str(file) + ".backup")
+    file.rename(original)
+    with original.open() as source:
+        with file.open("w") as dest:
+            dest.writelines(convert_camel(source))
 
 
 # CLI
@@ -105,7 +126,13 @@ def main(files: List[Path], transform=False):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        err_exit("Usage: ./camel_finder.py FILES...")
-
-    main([Path(f) for f in sys.argv[1:]])
+    parser = argparse.ArgumentParser(description=sys.modules[__name__].__doc__)
+    parser.add_argument("files", nargs="+", help="source files to scan for camelCase")
+    parser.add_argument(
+        "--convert",
+        action="store_true",
+        dest="convert",
+        help="perform camelCase to snake_case conversion",
+    )
+    args = parser.parse_args()
+    main([Path(f) for f in args.files], transform=args.convert)
