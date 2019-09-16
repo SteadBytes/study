@@ -95,7 +95,15 @@ def report_camel(file: Path, show_filenames=False):
 # Converting
 
 
-CONVERT_CAMEL_RE = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)(?<!_)[A-Z](?=[a-z]))")
+CONVERT_CAMEL_RE = re.compile(
+    (
+        # match a nomral 'hump' i.e. camel(C)ase or camel1(C)ase
+        r"((?<=[a-z0-9])[A-Z]"
+        # match mid-string uppercase humps, ignoring existing underscores
+        # i.e. CAMEL(C)ase or HTTP(E)rror
+        r"|(?!^)(?<!_)[A-Z](?=[a-z]))"
+    )
+)
 
 
 def convert_camel_word(w: str) -> str:
