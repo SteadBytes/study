@@ -196,3 +196,34 @@ end {bubblesort}
 - _M<sub>min</sub> = 0_
 - _M<sub>ave</sub> = 3/4(n<sup>2</sup> - n)_
 - _M<sub>max</sub> = 3/2(n<sup>2</sup> - n)_
+
+## Insertion Sort by Diminishing Increment
+
+Generalization of insertion sort known as **shell sort**
+
+Allows exchange of items that are **far apart**
+
+Each iteration arranges elements so that the sequence of every *h*th element is a sorted list
+
+- An _h_-sorted list
+- Performs insertion sort on the _h_ list
+
+The entire array is therefore _h_ interleaved, individually sorted lists
+
+_h_ decreases on each iteration, down to 1; at which point a 'normal' sort is performed
+
+- Ending with _h=1_ **guarantees** the final result will be sorted
+
+Large amounts of _disorder_ are reduced quickly by the larger _h_ sorts, leaving less
+work for the smaller _h_ sorts
+
+**Not stable**
+
+Different sequences of _h_ (gap sequences) have been proposed.
+
+- Any sequence ending with _h=1_ will be _correct_
+- Different sequences however will have different performance characteristics
+
+See [shell_sort.py](./code/shell_sort.py)
+
+- Includes examples of different gap sequences
