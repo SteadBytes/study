@@ -20,12 +20,12 @@ from typing import Generator, Iterable, List, NamedTuple, Optional
 # see tests for examples of matching/non-matching strings
 CAMEL_RE = re.compile(
     (
-        # 1st character must be lowercase
+        # 1st character must be lower case
         r"\b[a-z]+"
         # followed by a single digit
-        # OR uppercase character/number followed by lower case characters or number
+        # OR upper case character/number followed by lower case characters or number
         r"((\d)|([A-Z0-9][a-z0-9]+))"
-        # final character *may* be uppercase
+        # final character *may* be upper case
         r"+([A-Z])?"
     )
 )
@@ -116,11 +116,7 @@ def convert_camel_line(l: str) -> str:
     return l
 
 
-def convert_camel(lines: Iterable[str]) -> Generator[str, None, None]:
-    return (convert_camel_line(l) for l in lines)
-
-
-def transform_camel(file: Path):
+def convert_camel(file: Path):
     """
     Transform all occurences of camelCase strings in `file` to snake_case. The
     original file is renamed with a ".backup" extension to prevent data loss.
@@ -129,16 +125,16 @@ def transform_camel(file: Path):
     file.rename(original)
     with original.open() as source:
         with file.open("w") as dest:
-            dest.writelines(convert_camel(source))
+            dest.writelines(convert_camel_line(l) for l in dest)
 
 
 # CLI
 
 
-def main(files: List[Path], transform=False):
+def main(files: List[Path], convert=False):
     for f in files:
-        if transform:
-            transform_camel(f)
+        if convert:
+            convert_camel(f)
         else:
             report_camel(f, show_filenames=len(files) > 1)
 
@@ -153,4 +149,4 @@ if __name__ == "__main__":
         help="perform camelCase to snake_case conversion",
     )
     args = parser.parse_args()
-    main([Path(f) for f in args.files], transform=args.convert)
+    main([Path(f) for f in args.files], convert=args.convert)

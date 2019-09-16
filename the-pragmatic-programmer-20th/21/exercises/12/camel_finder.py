@@ -15,12 +15,12 @@ from typing import Generator, Iterable, List, NamedTuple
 # see tests for examples of matching/non-matching strings
 CAMEL_RE = re.compile(
     (
-        # 1st character must be lowercase
+        # 1st character must be lower case
         r"\b[a-z]+"
         # followed by a single digit
-        # OR uppercase character/number followed by lower case characters or number
+        # OR upper case character/number followed by lower case characters or number
         r"((\d)|([A-Z0-9][a-z0-9]+))"
-        # final character *may* be uppercase
+        # final character *may* be upper case
         r"+([A-Z])?"
     )
 )
