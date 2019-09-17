@@ -227,3 +227,131 @@ Different sequences of _h_ (gap sequences) have been proposed.
 See [shell_sort.py](./code/shell_sort.py)
 
 - Includes examples of different gap sequences
+
+## 2.2.5 Tree Sort (Heapsort)
+
+Improved version of straight selection using a **heap** instead of a linear-time search to identify the next sorted element.
+
+Sorting concept is the same as straight selection:
+
+- Array divided into sorted and unsorted sections
+- Iteratively shrink unsorted region by identifying the next item in order and placing it into the sorted region
+
+Difference is using a **heap** to maintain the unsorted elements of the array:
+
+- Heap allows more information to be retained through each scan of the array to find the next element than just the identification of the single smallest item.
+
+1. Build a heap from the array to be sorted
+2. Repeatedly remove the root element from the heap and insert it into the array
+   - Heap is updated after each removal to maintain the _heap property_
+   - Once all items removed from heap, the result is a sorted array
+
+Performed in place by splitting the array into two parts:
+
+- Sorted array
+  - Grows on each iteration
+- Heap
+  - Shrinks on each iteration
+
+### Binary Heap
+
+Sequence of keys:
+
+- _h<sub>l</sub>, h<sub>l+1</sub>,...h<sub>r</sub>_
+
+Maintaining the **heap property**:
+
+- Min heap:
+  - _h<sub>i</sub> <= h<sub>2i</sub>_
+  - _h<sub>i</sub> <= h<sub>2i + 1</sub>_
+    - _h<sub>1</sub> = min(h<sub>1</sub>...h<sub>1</sub>)_
+- Max heap:
+  - _h<sub>i</sub> >= h<sub>2i</sub>_
+  - _h<sub>i</sub> >= h<sub>2i + 1</sub>_
+    - _h<sub>1</sub> = max(h<sub>1</sub>...h<sub>1</sub>)_
+
+For all _i = l...r/2_
+
+**Assume min heap for following notes**
+
+- Algorithms are the same for max heap except for comparison operations
+
+Maintaining the heap property is by _sifting_ elements to be added along the path of smaller/larger comparands,which at the same time move up the path.
+
+```
+procedure sift(l, r: index);
+    label 13;
+    {i,j = indices of items to be exchanged during each sift step}
+    var i, j: index; x: item;
+begin i:=l; j := 2 * i; x := a[i];
+    while j <= r do
+    begin if j < r then
+        if a[j].key > a[j + 1].key then j := j + 1;
+        if x.key <= a[j].key then goto 13;
+        a[i] := a[j]; i := j; j += 2*i {sift}
+    end
+13: a[i] := x
+end
+```
+
+#### Building a Min Heap
+
+Min heap can be built _in-situ_, using an array:
+
+- Indexes _floor(n/2) + 1, floor(n/2) + 2, ..., n_ are **leaves** for the tree
+  - No two indices _i,j_ are such that _j = 2i_
+  - Each is a one-element heap, forming the bottom row of the heap binary tree
+- Therefore, take each element of index _<= floor(n/2) + 1_ and use `sift` to arrange it within the heap
+
+```
+l := (n div 2) + 1;
+while l > 1 do
+    begin l := l - 1; sift(l, n)
+    end
+```
+
+### Full Heapsort Algorithm
+
+```
+procedure heapsort;
+    var l, r: index; x: item;
+    procedure sift(l, r: index);
+        label 13;
+        {i,j = indices of items to be exchanged during each sift step}
+        var i, j: index; x: item;
+    begin i:=l; j := 2 * i; x := a[i];
+        while j <= r do
+        begin if j < r then
+            if a[j].key > a[j + 1].key then j := j + 1;
+            if x.key <= a[j].key then goto 13;
+            a[i] := a[j]; i := j; j += 2*i {sift}
+        end
+    13: a[i] := x
+    end
+begin l := (n div 2) + 1;
+    {build heap from array a}
+    while l > 1 do
+        begin l := l - 1; sift(l, n)
+        end
+    {repeatedly remove items from heap into sorted array}
+    while r > 1 do
+        begin x:= a[1]; a[1]: a[r]; a[r] := x;
+            r := r-1; sift
+        end
+end {heapsort}
+```
+
+### Analysis
+
+_On(log n)_
+
+- `sift` = _O(log n)_
+  - Height of binary tree = _log n_
+  - Worst case = move item from root down the height of tree to a leaf
+- Building initial min heap = _On/2(log n) ~ n log n_
+  - Call `sift` for _n/2_ items
+    - See [Building a Min Heap](#building-a-min-heap)
+- Sorting step = *O(nlogn)*
+    - *n* elements in array
+    - Worst case have to move from root to leaf = *log n*    
+- Building and sorting are executed sequentially -> *sum* the complexities -> remain order *n log n*
