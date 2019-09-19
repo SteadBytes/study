@@ -3,8 +3,6 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.math.numeric-tower :as math]))
 
-;;TODO: Tests + usage examples
-
 ; turn it up to 11!
 (def max-speed 11)
 
