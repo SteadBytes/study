@@ -351,7 +351,168 @@ _On(log n)_
 - Building initial min heap = _On/2(log n) ~ n log n_
   - Call `sift` for _n/2_ items
     - See [Building a Min Heap](#building-a-min-heap)
-- Sorting step = *O(nlogn)*
-    - *n* elements in array
-    - Worst case have to move from root to leaf = *log n*    
-- Building and sorting are executed sequentially -> *sum* the complexities -> remain order *n log n*
+- Sorting step = _O(nlogn)_
+  - _n_ elements in array
+  - Worst case have to move from root to leaf = _log n_
+- Building and sorting are executed sequentially -> _sum_ the complexities -> remain order _n log n_
+
+## 2.2.6 Partition Sort
+
+**Quicksort**
+
+Based on the fact that exchanges of items within the array should be performed over large distances to be most effective
+
+Divide and conquer algorithm:
+
+- Divide array into two smaller _subarrays_
+  - Low elements & high elements
+  - Divide on a _pivot_ element
+- Recursively sort the subarrays
+
+1. Select a _pivot_ element _x_ from the array
+2. Partition the array such that all elements less than the pivot are positioned before the it and all values greater than the pivot are positioned after it.
+
+- The pivot is now in it's final position in the sorted array
+
+3. Recursively apply steps 1 and 2 to each subarray
+
+### Partitioning
+
+```
+procedure partition;
+var w, x: item;
+beging i := 1; j := n;
+    select at random an item x; {pivot}
+    repeat
+        {scan from left until item a[i] > x is found}
+        while a[i].key < x.key do i := i + 1;
+        {scan from right until item a[j] < x is found}
+        while x.key < a[j].key do j := j - 1;
+        {
+            a[i] is > a and a[j] < x and a[i] is currently before
+            the pivot -> exchange positions so values of a[i] and a[j] are on the correct sides of the pivot
+        }
+        if i <= j then
+            {exchange a[i] and a[j]}
+            begin w := a[i]; a[i] := a[j]; a[j] := w;
+                i := i + 1; j := j - 1
+            end
+    until i > j
+end
+```
+
+Final index values _i, j_ of `partition` create two partitions:
+
+- _a<sub>k</sub> <= x for k = 1 ... i - 1_
+- _a<sub>k</sub> >= x for k = j + 1 ... n_
+
+Therefore:
+
+- _a<sub>k</sub> = x for k = j + 1 ... i - 1_
+
+### Recursive Quicksort
+
+```
+procedure quicksort;
+    procedure sort (l, r: index);
+        var i, j: index; x, w: item;
+    begin i := l; j := r;
+        x := a[(l + r) div 2]; {select middle element as pivot}
+        {partition}
+        repeat
+            {scan from left until item a[i] > x is found}
+            while a[i].key < x.key do i := i + 1;
+            {scan from right until item a[j] < x is found}
+            while x.key < a[j].key do j := j - 1;
+            {
+                a[i] is > a and a[j] < x and a[i] is currently before
+                the pivot -> exchange positions so values of a[i] and a[j] are on the correct sides of the pivot
+            }
+            if i <= j then
+                {exchange a[i] and a[j]}
+                begin w := a[i]; a[i] := a[j]; a[j] := w;
+                    i := i + 1; j := j - 1
+                end
+        until i > j
+        {recursively sort subarrays}
+        if l < j then sort(l, j);
+        if i < r then sort(i, r);
+    end ;
+begin sort(1, n)
+end {quicksort}
+```
+
+### Iterative Quicksort
+
+Maintain a stack of 'partitioning requests' yet to be performed
+
+- Each step produces _two_ partitioning requests
+  - Only one can be performed on the next iteration -> other is stacked to be performed on later iteration
+
+```
+procedure quicksort;
+    const m = 12; {stack size}
+    var i, j, l, r: index;
+        x, w: item;
+        s: 0 .. m; {most recent entry in stack}
+        stack: array [1..m] of {partition requests}
+            record l, r: index end;
+begin s := 1; stack[1].l := 1; stack[1].r := n;
+    repeat {take top request from stack}
+        l := stack[s].l; r := stack[s].r; s := s - 1;
+        repeat {split a[l] ... a[r]}
+            i := l; j := r; x := a[(l + r) div 2];
+            repeat {partition}
+                {scan from left until item a[i] > x is found}
+                while a[i].key < x.key do i := i + 1;
+                {scan from right until item a[j] < x is found}
+                while x.key < a[j].key do j := j - 1;
+                {
+                    a[i] is > a and a[j] < x and a[i] is currently before
+                    the pivot -> exchange positions so values of a[i] and a[j] are on the correct sides of the pivot
+                }
+                if i <= j then
+                    {exchange a[i] and a[j]}
+                    begin w := a[i]; a[i] := a[j]; a[j] := w;
+                        i := i + 1; j := j - 1
+                    end
+            until i > j
+            if i < r then
+            begin {stack request to sort right partition}
+                s := s + 1; stack[s].l := i; stack[s].r := r
+            end ;
+            r := j
+        until l >= r
+    until s = 0
+end {quicksort}
+```
+
+### Analysis
+
+**Worst case** = _O(n<sup>2</sup>)_
+
+- Every partition is size _n - 1_
+- Each partition processes a list of size one less than previous
+- _n - 1_ calls before reaching list of size 1
+- *i*th call does _O(n - 1)_ work to do partition -> _(n - 1) _ (n -1) ~ n<sup>2</sup>\*
+
+**Best case** = _O(n log n)_
+
+- Each partition produces two lists of ~ equal size
+- _log n_ calls before reaching list of size 1
+- No two calls at same level process same part of original list -> _O(n)_ time per level
+- _n _ n log n = O(n log n)\*
+
+**Average case** = _O(n log n)_
+
+- In each partition step, the number of exchanges = number of elements in left
+  partition times the probability of a key being exchanged.
+- Keys are exchanged if it is not less than the pivot element _x_
+  - Probability _(n - x + 1)/n_
+- Expected exchanges _M_ = summation of probability of exchange over all possible choices
+  of _x_ and dividing by _n_:
+  - _M = 1/n\* &Sigma;<sub>x=1..n</sub>(n-x)/n \* (n - x + 1) = n/6 - 1/6n ~= n/6_
+- Assuming each partition splits the array into _two halves_ - number of passes to sort = _log n_
+- Total = _expected exchanges \* passes = n/6 \* log n ~= n log n_
+
+Quicksort is best suited to **disordered arrays**
