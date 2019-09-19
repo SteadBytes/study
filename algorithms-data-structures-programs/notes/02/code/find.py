@@ -5,14 +5,14 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 
-def partition(a: List, l: int, r: int, k: int) -> Tuple[int, int]:
+def partition(lst: List, l: int, r: int, k: int) -> Tuple[int, int]:
     """
-    Partition `a` *in place* into two sublists `a[l:i], a[i:r]` using the
+    Partition `lst` *in place* into two sublists `lst[l:i], lst[i:r]` using the
     `k`th element as a pivot `x` such that:
     ```
-    all(a[k] <= x for k in range(l, i)) and
-    all(a[k] >= x for k in range(j + 1, r)) and
-    all(a[k] == x for k in range(j + 1, i - 1))
+    all(lst[k] <= x for k in range(l, i)) and
+    all(lst[k] >= x for k in range(j + 1, r)) and
+    all(lst[k] == x for k in range(j + 1, i - 1))
     ```
 
     Extracted from program 2.12 in book
@@ -23,20 +23,20 @@ def partition(a: List, l: int, r: int, k: int) -> Tuple[int, int]:
 
     i = l
     j = r
-    # partition a[l:r] into two sub arrays
-    x = a[k]
+    # partition lst[l:r] into two sub arrays
+    x = lst[k]
     while True:
         # scan from left
-        while a[i] < x:
+        while lst[i] < x:
             i += 1
         # scan from right
-        while x < a[j]:
+        while x < lst[j]:
             j -= 1
-        # a[i] is > a and a[j] < x and a[i] is currently before the pivot
-        # -> exchange positions so values of a[i] and a[j] are on correct
+        # lst[i] is > x and lst[j] < x and lst[i] is currently before the pivot
+        # -> exchange positions so values of lst[i] and lst[j] are on correct
         # sides of the pivot
         if i <= j:
-            a[i], a[j] = a[j], a[i]
+            lst[i], lst[j] = lst[j], lst[i]
             i += 1
             j -= 1
         # entire array scanned
@@ -44,48 +44,48 @@ def partition(a: List, l: int, r: int, k: int) -> Tuple[int, int]:
             return i, j
 
 
-def find(a: List, k: int):
+def find(lst: List, k: int):
     """
-    Find the `k`th smallest element in `a` using quickselect/Hoare's find algorithm
+    Find the `k`th smallest element in `lst` using quickselect/Hoare's find algorithm
 
-    Will partially sort `a` *in place*
+    Will partially sort `lst` *in place*
 
     Translated from program 2.12 in book
     """
     l = 0
-    r = len(a) - 1
+    r = len(lst) - 1
     while l < r:
-        i, j = partition(a, l, r, k)
+        i, j = partition(lst, l, r, k)
         if j < k:
             l = i
         if k < i:
             r = j
-    return a[k]
+    return lst[k]
 
 
-def median(a: List):
+def median(lst: List):
     """
-    Return the median item of `a`
+    Return the median item of `lst`
     """
-    return find(a, len(a) // 2)
+    return find(lst, len(lst) // 2)
 
 
 @given(st.lists(st.integers(), min_size=1), st.data())
-def test_find(l, data):
+def test_find(lst, data):
     """
     Compare to retrieving the `k`th item of fully sorted list
     """
-    k = data.draw(st.integers(min_value=0, max_value=len(l) - 1))
-    kth = find(l, k)
+    k = data.draw(st.integers(min_value=0, max_value=len(lst) - 1))
+    kth = find(lst, k)
 
-    assert kth == sorted(l)[k]
+    assert kth == sorted(lst)[k]
 
 
 @given(st.lists(st.integers(), min_size=1))
-def test_median(l):
+def test_median(lst):
     """
     Compare to retrieving the middle item of fully sorted list
     """
-    m = median(l)
+    m = median(lst)
 
-    assert m == sorted(l)[len(l) // 2]
+    assert m == sorted(lst)[len(lst) // 2]

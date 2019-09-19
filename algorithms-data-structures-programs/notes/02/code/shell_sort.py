@@ -82,33 +82,33 @@ def A0356562(n, k):
     return pow(4, k) + 3 * pow(2, k - 1) + 1
 
 
-def shell_sort(a: List, gap_fn: Callable[[int], Iterable[int]] = shell_gap):
+def shell_sort(lst: List, gap_fn: Callable[[int], Iterable[int]] = shell_gap):
     """
     In place sort of `a` using shell sort.
     
     Args:
-        a (list): List to sort in place
+        lst (list): List to sort in place
         gap_fn (callable): Function which generates a valid sequence of 'gaps' to
-            use for each h-sort; given the length of `a`. Valid sequence *must*
+            use for each h-sort; given the length of `lst`. Valid sequence *must*
             decrease from an initial value to 1.
     """
-    for gap in gap_fn(len(a)):
-        for i in range(gap, len(a)):
-            x = a[i]
+    for gap in gap_fn(len(lst)):
+        for i in range(gap, len(lst)):
+            x = lst[i]
             j = i
-            while j >= gap and a[j - gap] > x:
-                a[j] = a[j - gap]
+            while j >= gap and lst[j - gap] > x:
+                lst[j] = lst[j - gap]
                 j -= gap
-            a[j] = x
+            lst[j] = x
 
 
 @pytest.mark.parametrize(
     "gap_fn", [shell_gap, frank_lazarus_gap, A168604, A083318, A0356562]
 )
 @given(st.lists(st.integers(), min_size=1))
-def test_shell_sort(gap_fn, l):
+def test_shell_sort(gap_fn, lst):
     """
     Compare to Python built in sorting
     """
-    shell_sort(l, gap_fn)
-    assert l == sorted(l)
+    shell_sort(lst, gap_fn)
+    assert lst == sorted(lst)
