@@ -516,3 +516,69 @@ end {quicksort}
 - Total = _expected exchanges \* passes = n/6 \* log n ~= n log n_
 
 Quicksort is best suited to **disordered arrays**
+
+## 2.2.7 Finding the Median
+
+Finding the median is special case of finding *k*th smallest element where _k - n/2_
+
+Naive solution: sort then select *k*th element
+
+Partitioning (as used in Quicksort) can be used to more efficiently find the *k*th smallest element. Known as **Quickselect** (referred to as _find_ in the book):
+
+- Choose pivot element _x_
+- Partition array into 2 subarrays: <= _x_ and >= _x_
+- Recur into **one partition** - side where element being searched for is present
+  - Quicksort recurses into both partitions
+
+First partition using _l = 1, r = n_ and _x = a[k]_. Produces:
+
+1. _a[h] <= x_ for all _h < i_
+2. _a[h] >= x_ for all _h > j_
+3. _i > j_
+
+3 cases from partitioning:
+
+1. _x_ too small -> limit between two partitions is below desired _k_ -> repeat
+   partitioning on larger subarray _a[i]...a[r]_
+2. _x_ too large -> limit between two paritions is above desired _k_ -> repeat
+   partitioning on smaller subarray _a[l]...a[j]_
+3. _j < k < i_ -> _x_ splits array into two partitions in the specified proportions
+   -> _x_ is in desired quantile
+
+Partitioning must be **repeated until case 3** occurs
+
+```
+procedure find(k; integer);
+    var l, r, i, j, w, x: integer;
+begin l := 1, r := n;
+    while l < r do
+    begin x := a[k]; i := l; j := r;
+        repeat {split/partition}
+            while a[i] < x do i:= i + 1;
+            while x < a[j] do j := j - 1;
+            if i <= j then
+                begin w := a[i]; a[i] := a[j]; a[j] := w;
+                    i := i + 1; j := j-1
+                end
+            until i > j;
+            if j < k then l := r;
+            if k < i then r := j
+        end
+    end {find}
+```
+
+### Analysis
+
+**Average case** = _O(n)_
+
+- Each partition _halves_ the size of the subarray where the desired quantile lies
+- Necessary comparisons = _n + n/2 + n/4 + ... + 1 ~= 2n_
+
+**Worst case** = _O(n<sup>2</sup>)_
+
+- Each partition reduces the size of candidates by only 1
+- Necessary comparisons = _n<sup>2</sup>_
+
+No advantage to using Quickselect for small number of elements i.e. < 10
+
+- Faster just to sort the array and pick the *k*th element
