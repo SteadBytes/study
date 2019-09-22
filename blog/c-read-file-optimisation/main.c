@@ -7,14 +7,27 @@
 #define BUFSIZE 4096
 
 size_t read_file(int fd, char **data);
+size_t read_file_improved(int fd, char **data);
 
-int main()
+int main(int argc, char *argv[])
 {
     size_t len;
     char *data = NULL;
-
-    len = read_file(STDIN_FILENO, &data);
-
+    /* default to improved implementation*/
+    if (argc == 1)
+    {
+        len = read_file_improved(STDIN_FILENO, &data);
+    }
+    /* optionally specify original implementation for comparison purposes */
+    else if (argc == 2 && !strcmp(argv[1], "--slow"))
+    {
+        len = read_file(STDIN_FILENO, &data);
+    }
+    else
+    {
+        fprintf(stderr, "usage: read_file [--slow]\nReads from standard input.");
+        return 1;
+    }
     // do some work with data
     printf("%ld\n", len);
 
@@ -91,4 +104,3 @@ size_t read_file_improved(int fd, char **data)
 
     return len;
 }
-
