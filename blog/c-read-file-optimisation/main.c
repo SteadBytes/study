@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "usage: read_file [--slow]\nReads from standard input.");
         return 1;
     }
-    // do some work with data
+    /* do some work with data */
     printf("%ld\n", len);
 
     return 0;
@@ -41,6 +41,7 @@ size_t read_file(int fd, char **data)
     ssize_t read_len;
     char *tmp;
 
+    /* chunked read from fd into data */
     while ((read_len = read(fd, buf, BUFSIZE)) > 0)
     {
         tmp = malloc(len + read_len);
