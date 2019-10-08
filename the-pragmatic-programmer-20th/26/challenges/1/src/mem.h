@@ -3,6 +3,7 @@
 
 #include <memory.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "mem_block.h"
 
 void *mem_malloc(size_t size);

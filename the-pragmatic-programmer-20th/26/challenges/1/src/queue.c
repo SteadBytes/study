@@ -19,21 +19,29 @@ Queue *queue_new(size_t n)
     assert(n > 0);
 
     int *buf = mem_malloc((n + 1) * sizeof(int));
+#ifdef DEBUG
     assert(buf);
     note_ref(buf);
-
+#endif
     Queue q = {0, 0, (n + 1), buf};
     Queue *qptr = mem_malloc(sizeof(Queue));
-    assert(qptr);
 
+    assert(qptr);
     *qptr = q;
+
+#ifdef DEBUG
     note_ref(qptr);
+#endif
     return qptr;
 }
 
 flag queue_valid(Queue *p)
 {
+#ifdef DEBUG
     return valid_pointer(p->buf, p->size) && valid_pointer(p, sizeof(Queue));
+#else
+    return (flag)1;
+#endif
 }
 
 void queue_free(Queue *q)
@@ -44,6 +52,7 @@ void queue_free(Queue *q)
     mem_free(q->buf);
     mem_free(q);
     /* TODO: Should this assert q replaced with garbage bytes? */
+    /* FIXME: Fails in debug build as mem block references are not cleared */
 }
 
 int queue_size(Queue *q)
@@ -98,5 +107,4 @@ int main(void)
         printf("size, %d\n", queue_size(q));
     }
     queue_free(q);
-    // */
 }

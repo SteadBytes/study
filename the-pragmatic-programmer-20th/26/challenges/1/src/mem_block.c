@@ -1,3 +1,4 @@
+#ifdef DEBUG
 #include "mem_block.h"
 
 /* Private */
@@ -171,3 +172,4 @@ flag valid_pointer(void *p, size_t size)
 
     return (flag)1;
 }
+#endif
