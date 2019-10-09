@@ -101,7 +101,6 @@ void free_mem_block_info(byte *p)
     /* p not valid */
     assert(cur != NULL);
 
-    assert(!cur->is_referenced);
     /* destroy contents before free */
     memset(cur, garbage_bytes, sizeof(MemBlockInfo));
     free(cur);
