@@ -3,27 +3,27 @@
 
 void *mem_malloc(size_t size)
 {
-    void *p = malloc(size);
+    void *p_block = malloc(size);
 #ifdef DEBUG
-    assert(p);
+    assert(p_block);
 
-    if (!create_mem_block_info(p, size))
+    if (!create_mem_block_info(p_block, size))
     {
-        free(p);
-        p = NULL;
+        free(p_block);
+        p_block = NULL;
     }
 #endif
-    return p;
+    return p_block;
 }
 
-void mem_free(void *block)
+void mem_free(void *p_block)
 {
 #ifdef DEBUG
-    assert(valid_pointer(block, block_size(block)));
-    memset(block, garbage_bytes, block_size(block));
+    assert(valid_pointer(p_block, block_size(p_block)));
+    memset(p_block, garbage_bytes, block_size(p_block));
 #endif
 #ifdef DEBUG
-    free_mem_block_info(block);
+    free_mem_block_info(p_block);
 #endif
-    free(block);
+    free(p_block);
 }

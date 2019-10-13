@@ -12,18 +12,18 @@ static MemBlockInfo *head = NULL;
 * to the start of the memory block.
 * Exits with assert if no found.
 */
-static MemBlockInfo *get_mem_block_info(byte *p)
+static MemBlockInfo *get_mem_block_info(byte *p_block)
 {
     MemBlockInfo *cur;
 
     /* scan linked list of known MemBlockInfo */
     for (cur = head; cur != NULL; cur = cur->next)
     {
-        byte *start = cur->p;
-        byte *end = cur->p + cur->size - 1;
+        byte *start = cur->p_block;
+        byte *end = cur->p_block + cur->size - 1;
 
-        /* p can be anywhere within the memory block */
-        if (p >= start && p <= end)
+        /* p_block can be anywhere within the memory block */
+        if (p_block >= start && p_block <= end)
         {
             break;
         }
@@ -49,20 +49,22 @@ flag create_mem_block_info(byte *p_new_block, size_t size)
 {
     assert(p_new_block && size > 0);
 
-    MemBlockInfo *p = (MemBlockInfo *)malloc(sizeof(MemBlockInfo));
+    MemBlockInfo *p_block_info = (MemBlockInfo *)malloc(sizeof(MemBlockInfo));
+
+    assert(p_block_info);
 
     /* unable to allocate memory */
-    if (p == NULL)
+    if (p_block_info == NULL)
     {
         return (flag)0;
     }
 
     /* initialise MemBlockInfo*/
-    p->p = p_new_block;
-    p->size = size;
-    p->next = head;
+    p_block_info->p_block = p_new_block;
+    p_block_info->size = size;
+    p_block_info->next = head;
 
-    head = p; /* advance MemBlockInfo linked list head */
+    head = p_block_info; /* advance MemBlockInfo linked list head */
     return (flag)1;
 }
 
@@ -72,9 +74,9 @@ flag create_mem_block_info(byte *p_new_block, size_t size)
 * this module or if p is still referenced.
 * Memory is set to garbage bytes before being freed.
 */
-void free_mem_block_info(byte *p)
+void free_mem_block_info(byte *p_block)
 {
-    assert(p);
+    assert(p_block);
 
     MemBlockInfo *cur, *prev;
 
@@ -83,7 +85,7 @@ void free_mem_block_info(byte *p)
     /* scan linked list known MemBlockInfo */
     for (cur = head; cur != NULL; cur = cur->next)
     {
-        if (cur->p == p)
+        if (cur->p_block == p_block)
         {
             if (prev == NULL)
             {
@@ -98,7 +100,7 @@ void free_mem_block_info(byte *p)
         prev = cur;
     }
 
-    /* p not valid */
+    /* p_block not valid */
     assert(cur != NULL);
 
     /* destroy contents before free */
@@ -110,11 +112,11 @@ void free_mem_block_info(byte *p)
 /*
 * Return the size of memory block pointed to by p.
 */
-size_t block_size(byte *p)
+size_t block_size(byte *p_block)
 {
-    assert(p);
-    MemBlockInfo *p_block_info = get_mem_block_info(p);
-    assert(p == p_block_info->p);
+    assert(p_block);
+    MemBlockInfo *p_block_info = get_mem_block_info(p_block);
+    assert(p_block == p_block_info->p_block);
     return p_block_info->size;
 }
 
@@ -133,10 +135,10 @@ void clear_refs(void)
 * Mark a memory block as being referenced. Used to track usage of pointers to
 * avoid use-after-free (see free_mem_block_info).
 */
-void note_ref(void *p)
+void note_ref(void *p_block)
 {
-    assert(p);
-    MemBlockInfo *p_block_info = get_mem_block_info(p);
+    assert(p_block);
+    MemBlockInfo *p_block_info = get_mem_block_info(p_block);
     p_block_info->is_referenced = (flag)1;
 }
 
@@ -149,7 +151,7 @@ void check_refs(void)
     for (MemBlockInfo *cur = head; cur != NULL; cur = cur->next)
     {
         /* basic block integrity */
-        assert(cur->p && cur->size > 0);
+        assert(cur->p_block && cur->size > 0);
         /* lost/leaky memory */
         assert(cur->is_referenced);
     }
@@ -167,7 +169,7 @@ flag valid_pointer(void *p, size_t size)
     byte *pb = (byte *)p;
     MemBlockInfo *p_block_info = get_mem_block_info(pb);
 
-    assert(pb + size <= p_block_info->p + p_block_info->size);
+    assert(pb + size <= p_block_info->p_block + p_block_info->size);
 
     return (flag)1;
 }
