@@ -25,11 +25,14 @@ Queue *queue_new(size_t n)
     note_ref(q);
     queue_check_memory_integrity();
 #endif
+    assert(queue_valid(q));
     return q;
 }
 
 size_t queue_size(Queue *q)
 {
+    assert(queue_valid(q));
+
     size_t size = (q->inp - q->outp + q->size) % q->size;
     assert(size >= 0 && size <= q->size);
     return size;
@@ -37,6 +40,8 @@ size_t queue_size(Queue *q)
 
 void queue_put(Queue *q, int n)
 {
+    assert(queue_valid(q));
+
     int size = queue_size(q);
     assert(size < q->size);
 
@@ -91,7 +96,8 @@ void queue_check_memory_integrity(void)
 
 void track_queue(Queue *q)
 {
-    assert(q);
+    assert(queue_valid(q));
+
     KnownQueueNode *k = mem_malloc(sizeof(KnownQueueNode));
     assert(k);
     k->qp = q;
@@ -104,6 +110,8 @@ void track_queue(Queue *q)
 
 void untrack_queue(Queue *q)
 {
+    assert(queue_valid(q));
+
     KnownQueueNode *kp, *prev;
     prev = NULL;
     for (kp = head; kp != NULL; kp = kp->next)
@@ -131,10 +139,11 @@ void untrack_queue(Queue *q)
     mem_free(kp);
 }
 
-flag queue_valid(Queue *p)
+flag queue_valid(Queue *q)
 {
+    assert(q);
 #ifdef DEBUG
-    return valid_pointer(p->buf, p->size) && valid_pointer(p, sizeof(Queue));
+    return valid_pointer(q->buf, q->size) && valid_pointer(q, sizeof(Queue));
 #else
     return (flag)1;
 #endif
