@@ -48,9 +48,16 @@ void queue_put(Queue *q, int n)
 
 int queue_get(Queue *q)
 {
-    assert(q);
+    assert(queue_valid(q));
+
+    /* cannot get from empty queue */
+    size_t size_before = queue_size(q);
+    assert(size_before > 0);
+
     int ans = q->buf[q->outp];
     q->outp = (q->outp + 1) % q->size;
+
+    assert(queue_size(q) == size_before - 1);
     return ans;
 }
 
