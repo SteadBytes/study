@@ -17,13 +17,39 @@ def chop_iterative(x: int, lst: List[int]):
         v = lst[mid]
         if v == x:
             return mid
-        if v < x:
+        elif v < x:
             low = mid + 1
         else:
             high = mid - 1
     return -1
 
 
+def chop_recursive(x: int, lst: List[int]):
+    """
+    Classic recursive binary search implementation. Again, no imagination nor
+    implementation problems here due to familiarity with the algorithm. The
+    recursive version is a very natural expression of the binary chop due to
+    it's recursive definition. An issue commonly encountered with this
+    implementation (as with all recursive algorithms) is getting the termination
+    case `low > high` incorrect and causing an infinite recursion/stack overflow.
+    """
+
+    def recur(low: int, high: int):
+        if low > high:
+            return -1
+        mid = (low + high) // 2
+        v = lst[mid]
+        if v == x:
+            return mid
+        elif v < x:
+            return recur(mid + 1, high)
+        else:
+            return recur(low, mid - 1)
+
+    return recur(0, len(lst) - 1)
+
+
+@pytest.mark.parametrize("chop", [chop_iterative, chop_recursive])
 @pytest.mark.parametrize(
     "expected,x,lst",
     [
@@ -50,5 +76,5 @@ def chop_iterative(x: int, lst: List[int]):
         (-1, 8, [1, 3, 5, 7]),
     ],
 )
-def test_chop(expected, x, lst):
-    assert chop_iterative(x, lst) == expected
+def test_chop(chop, expected, x, lst):
+    assert chop(x, lst) == expected
