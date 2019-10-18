@@ -2,6 +2,9 @@ from typing import List
 
 import pytest
 
+from hypothesis import given
+from hypothesis import strategies as st
+
 
 def chop_iterative(x: int, lst: List[int]):
     """
@@ -49,7 +52,35 @@ def chop_recursive(x: int, lst: List[int]):
     return recur(0, len(lst) - 1)
 
 
-@pytest.mark.parametrize("chop", [chop_iterative, chop_recursive])
+def chop_slices(x: int, lst: List[int]):
+    """
+    Recursive implementation using decreasing list slices instead of indexing
+    directly into the source list. Complicates returning the final return index
+    as the middle index of a slice will not be the index of that position in the
+    entire original list. To calculate the correct index within the original
+    list, the recursion takes an `offset` parameter which tracks the starting
+    position of the slice within the original list.
+    """
+
+    def recur(_l, offset):
+        if not _l:
+            return -1
+        mid = len(_l) // 2
+        v = _l[mid]
+        if v == x:
+            return mid + offset
+        elif v < x:
+            return recur(_l[mid + 1 :], offset + mid + 1)
+        else:
+            return recur(_l[:mid], offset)
+
+    return recur(lst, 0)
+
+
+CHOP_FUNCS = [chop_iterative, chop_recursive, chop_slices]
+
+
+@pytest.mark.parametrize("chop", CHOP_FUNCS)
 @pytest.mark.parametrize(
     "expected,x,lst",
     [
@@ -77,4 +108,34 @@ def chop_recursive(x: int, lst: List[int]):
     ],
 )
 def test_chop(chop, expected, x, lst):
+    """
+    Test cases provided by the Kata.
+    """
     assert chop(x, lst) == expected
+
+
+@st.composite
+def sorted_list_strategy(draw):
+    lst = draw(st.lists(st.integers(), min_size=1, max_size=100000, unique=True))
+    lst.sort()
+    return lst
+
+
+@pytest.mark.parametrize("chop", CHOP_FUNCS)
+@given(st.data(), sorted_list_strategy())
+def test_chop_in_list(chop, data, lst):
+    """
+    Property based test for finding index of items known to exist in the list.
+    """
+    i = data.draw(st.integers(min_value=0, max_value=len(lst) - 1))
+    assert chop(lst[i], lst) == i
+
+
+@pytest.mark.parametrize("chop", CHOP_FUNCS)
+@given(st.data(), sorted_list_strategy())
+def test_chop_not_in_list(chop, data, lst):
+    """
+    Property based test for items known *not* to exist in the list.
+    """
+    x = data.draw(st.integers().filter(lambda x: x not in lst))
+    assert chop(x, lst) == -1
