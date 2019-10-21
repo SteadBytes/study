@@ -2,14 +2,11 @@
 """
 Simple Finite State Machine for extracting quoted strings within a stream of
 text.
-
-Translated into Python and adapted slightly from event/strings_fsm.rb on page
-141.
 """
 import sys
 from enum import Enum, auto
 
-import pytest
+from fsm import StateMachine
 
 
 class State(Enum):
@@ -39,12 +36,35 @@ TRANSITIONS = {
 }
 
 
-def find_strings(char_stream):
+def find_strings_original(char_stream):
+    """
+    Yields values of quoted strings found in `char_stream`.
+
+    Translated into Python and adapted slightly from event/strings_fsm.rb on
+    page 141.
+
+    >>> list(find_strings_original('"hello", this sentence has "some quoted" strings'))
+    ["hello", "some quoted"]
+    """
     state = State.LOOK_FOR_STRING
     result = []
 
     for ch in char_stream:
         state, action = TRANSITIONS[state].get(ch, TRANSITIONS[state][State.DEFAULT])
+        if action == State.IGNORE:
+            continue
+        elif action == State.START_NEW_STRING:
+            result = []
+        elif action == State.ADD_CURRENT_TO_STRING:
+            result.append(ch)
+        elif action == State.FINISH_CURRENT_STRING:
+            yield "".join(result)
+
+
+def find_strings(char_stream):
+    fsm = StateMachine(TRANSITIONS, State.DEFAULT, State.LOOK_FOR_STRING)
+
+    for state, action, ch in fsm.process(char_stream):
         if action == State.IGNORE:
             continue
         elif action == State.START_NEW_STRING:
