@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     try:
         order = int(sys.argv[1])
-    except (KeyError, ValueError):
+    except (IndexError, ValueError):
         print(
             "hilbert_curve: Output SVG of a Hilbert curve\nUsage: hilbert_curve order",
             file=sys.stderr,
