@@ -1,11 +1,11 @@
-from typing import Iterable, Dict, Set
 from collections import defaultdict
+from typing import DefaultDict, Iterable, Set
 
-AnagramIndex = Dict[str, Set[str]]
+AnagramIndex = DefaultDict[str, Set[str]]
 
 
 def build_index(words: Iterable[str]) -> AnagramIndex:
-    index = defaultdict(set)  # avoid duplicates w/set
+    index = defaultdict(set)  # avoid duplicates
     for word in words:
         _word = "".join(sorted(word.lower()))
         index[_word].add(word)
@@ -13,19 +13,33 @@ def build_index(words: Iterable[str]) -> AnagramIndex:
     return index
 
 
+def _anagram_items(index: AnagramIndex):
+    return ((k, ws) for k, ws in index.items() if len(ws) > 1)
+
+
+def all_anagrams(index: AnagramIndex):
+    return (ws for _, ws in _anagram_items(index))
+
+
 def longest_anagram(index: AnagramIndex) -> Set[str]:
-    return index[max(index, key=len)]
+    try:
+        return max(_anagram_items(index), key=lambda x: len(x[0]))[1]
+    except ValueError:
+        return None
 
 
 def most_anagrams(index: AnagramIndex) -> str:
-    return max(index.values(), key=len)
+    try:
+        return max(_anagram_items(index), key=lambda x: len(x[1]))[1]
+    except ValueError:
+        return None
 
 
 if __name__ == "__main__":
     with open("data/wordlist.txt", encoding="iso-8859-1") as f:
         index = build_index((l.strip() for l in f))
 
-    for ws in index.values():
+    for ws in all_anagrams(index):
         print(*ws)
 
     print()
@@ -33,24 +47,3 @@ if __name__ == "__main__":
     print(f"Longest anagram: {longest_anagram(index)}")
     most = most_anagrams(index)
     print(f"Most anagrams: {most} ({len(most)})")
-
-    # TODO: Use this list for testing?
-    # words = [
-    #     "kinship",
-    #     "pinkish",
-    #     "enlist",
-    #     "inlets",
-    #     "listen",
-    #     "silent",
-    #     "boaster",
-    #     "boaters",
-    #     "borates",
-    #     "fresher",
-    #     "refresh",
-    #     "sinks",
-    #     "skins",
-    #     "knits",
-    #     "stink",
-    #     "rots",
-    #     "sort",
-    # ]
