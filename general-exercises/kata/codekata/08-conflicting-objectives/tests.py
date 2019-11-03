@@ -1,6 +1,7 @@
 import pytest
 
-from readable import compounds
+import fast
+import readable
 
 
 @pytest.fixture
@@ -33,7 +34,8 @@ def words():
     ]
 
 
-def test_compounds(words):
+@pytest.mark.parametrize("compounds", [readable.compounds, fast.compounds])
+def test_compounds(compounds, words):
     assert list(compounds(words)) == [
         ("al", "bums"),
         ("bar", "ely"),
