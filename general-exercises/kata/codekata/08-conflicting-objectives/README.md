@@ -23,7 +23,7 @@ Implement 3 times with the following priorities:
 2. Speed
 3. Extendibility
 
-## Readable Algorithm
+## Readable Version
 
 Filtering pipeline approach.
 
@@ -57,7 +57,7 @@ $ time python3 readable.py > /dev/null
 python3 readable.py > /dev/null  102.35s user 0.00s system 99% cpu 1:42.37 total
 ```
 
-## Fast Algorithm
+## Fast Version
 
 Calculating combinations, filtering combinations and repeated filtering of the input dictionary are the most expensive parts of the readable algorithm.
 
@@ -82,4 +82,28 @@ For each word there are _O(n-1)_ substring pairs
 ```bash
 time python3 fast.py > /dev/null
 python3 fast.py > /dev/null  0.19s user 0.02s system 99% cpu 0.208 total
+```
+
+## Extendible Version
+
+- Configurable compound length and number of concatenated words
+  - Readable version included this
+
+Generalise "split word into pairs" from fast version to "split word into n-tuples":
+
+```
+n = 3
+
+a + l + bums
+a + lb + ums
+a + lbu + ms
+a + lbum + s
+
+al + b + ums
+al + bu + ms
+
+alb +  u + ms
+alb + um + s
+
+albu + m + s
 ```

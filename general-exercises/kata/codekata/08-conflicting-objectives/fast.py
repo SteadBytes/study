@@ -8,7 +8,7 @@ def substring_pairs(s: str) -> StringPairs:
         yield s[0:i], s[i:]
 
 
-def compounds(dictionary: List[str], n: int = 2, length: int = 6) -> StringPairs:
+def compounds(dictionary: List[str], length: int = 6) -> StringPairs:
     all_words = {w.lower() for w in dictionary}
     for w in (w for w in dictionary if len(w) == length):
         for s1, s2 in substring_pairs(w):
