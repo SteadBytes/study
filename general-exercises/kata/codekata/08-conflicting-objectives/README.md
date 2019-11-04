@@ -83,3 +83,27 @@ For each word there are _O(n-1)_ substring pairs
 time python3 fast.py > /dev/null
 python3 fast.py > /dev/null  0.19s user 0.02s system 99% cpu 0.208 total
 ```
+
+## Extendible Version
+
+- Configurable compound length and number of concatenated words
+  - Readable version included this
+
+Generalise "split word into pairs" from fast version to "split word into n-tuples":
+
+```
+n = 3
+
+a + l + bums
+a + lb + ums
+a + lbu + ms
+a + lbum + s
+
+al + b + ums
+al + bu + ms
+
+alb +  u + ms
+alb + um + s
+
+albu + m + s
+```
