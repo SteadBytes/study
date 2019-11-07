@@ -87,7 +87,12 @@ python3 fast.py > /dev/null  0.19s user 0.02s system 99% cpu 0.208 total
 ## Extendible Version
 
 - Configurable compound length and number of concatenated words
-  - Readable version included this
+  - Readable version included this (although impractically slow to use)
+- Maintain the dictionary state and provide an API to update it?
+  - Using a function approach, change the `compounds` function to take a `set` of
+    words instead of a `list`
+    - Push the creation of the `set` up to the caller
+    - Caller can update the `set` and call `compounds` again. Instead of updating the initial words list and having `compounds` recreate the `set` each time.
 
 Generalise "split word into pairs" from fast version to "split word into n-tuples":
 
@@ -101,6 +106,7 @@ a + lbum + s
 
 al + b + ums
 al + bu + ms
+al + bum + s
 
 alb +  u + ms
 alb + um + s
