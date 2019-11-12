@@ -5,3 +5,6 @@
 __pycache__/
 .hypothesis
 .pytest_cache
+
+*.pdf
+*.djvu
