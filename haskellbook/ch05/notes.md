@@ -39,3 +39,18 @@ Prelude> let f :: a -> a -> a -> a; f = undefined
 Prelude> let x :: Char; x = undefined
 Prelude> :t f x
 ```
+
+## Polymorphism
+
+Polymorphic type variables allow for expressions to be implemented that accept and/or return multiple types **without the need for multiple variations of the expressions for each type**.
+
+**Parametric** polymorphism = Fully polymorphic - the final concrete type of _parameters_ (type variables) could be anything.
+
+- i.e. `id :: a -> a`
+
+**Constrained** polymorphism = Possible values are _constrained_ via typeclasses - reducing the set of possible concrete types.
+
+- i.e. `(+) :: Num a => a -> a -> a`
+- Increases the possible behaviour of a function by bringing into scope a set of operations
+
+**Principle type** = most generic type that typechecks.
