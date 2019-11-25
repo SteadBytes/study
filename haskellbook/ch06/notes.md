@@ -23,6 +23,19 @@ Cannot have multiple of the same typeclass instances for a given type.
 
 - i.e. defining `Eq` twice will not compile
 
+Tuple syntax in typeclasses denote _conjunction_ of typeclass constraints i.e. `Integral` requires a type to already have instances of both `Real` and `Enum`:
+
+```haskell
+class (Real a, Enum a) => Integral a where
+-- ...
+```
+
+Typeclass inheritance is **additive only**.
+
+- Cannot override methods provided by another typeclass
+  - i.e. `Real` cannot override `(+)` from `Num`
+- Avoid issues caused by multiple inheritance
+
 ## Partial functions
 
 **Not** partial _application_
@@ -67,3 +80,27 @@ Use **sum types** to represent a constrained set of values.
 
 - Reduces the number of cases that functions must handle
 - i.e. don't use `Int` as an _implicit_ sum type (often used in C)
+
+## Type-defaulting typeclasses
+
+Typeclasses _default_ to a concrete type when a typeclass-constrained polymorphic value is evaluated without a concrete type being specified.
+
+For example `Fractional` defaults to `Double`:
+
+```
+Prelude> :t 1 / 2
+0.5
+```
+
+Numeric typeclass defaults:
+
+```haskell
+default Num Integer
+default Real Integer
+default Enum Integer
+default Integral Integer
+default Fractional Double
+default RealFrac Double
+default Floating Double
+default RealFloat Double
+```
