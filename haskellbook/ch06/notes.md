@@ -104,3 +104,30 @@ default RealFrac Double
 default Floating Double
 default RealFloat Double
 ```
+
+## IO
+
+Construct for performing **side effects** without _deviating_ from pure lambda calculus.
+
+- Other lambda calculus based functional languages add to the lambda calculus to support side effectful functions
+
+`IO` actions are _formulas_ - a _means of producing_ a value of a given type, as opposed to a value of that type directly:
+
+```haskell
+-- a String value
+aString :: String
+
+
+-- formula to obtain a value of type String
+-- through IO (side effects)
+ioString :: IO String
+```
+
+## Instances are dispatched by type
+
+**Typeclass instance** = _Unique_ pairing of a typeclass and a type.
+
+Class/type definitions don't define any _terms_ (actual code) that can be compiled -> _only types_
+
+- _Terms_ are specified within typeclass _instances_ for the type
+- Haskell _dispatches_ to the correct instance based on the type of a value
