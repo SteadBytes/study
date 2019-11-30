@@ -42,13 +42,6 @@
 
 (deftest rule-types
   (let [price (fn [rule n] ((checkout/price rule) n))]
-    (testing "per"
-             (let [rule (checkout/per 100 0.50)]
-               (is (= 0.00 (price rule 0)))
-               (is (= 0.50 (price rule 100)))
-               (is (= 0.25 (price rule 50)))
-               (is (= 0.75 (price rule 150)))
-               (is (= 1.00 (price rule 200)))))
     (testing "each"
              (let [rule (checkout/each 0.50)]
                (is (= 0.00 (price rule 0)))
@@ -56,4 +49,21 @@
                (is (= 1.0 (price rule 2)))
                (is (= 50.0 (price rule 100)))
                (is (thrown? java.lang.AssertionError (price rule -1)))
-               (is (thrown? java.lang.AssertionError (price rule 0.5)))))))
+               (is (thrown? java.lang.AssertionError (price rule 0.5)))))
+    (testing "n-for-p"
+             (let [rule (checkout/n-for-p 3 130.00 50.00)]
+               (is (= 0.00 (price rule 0)))
+               (is (= 50.00 (price rule 1)))
+               (is (= 100.00 (price rule 2)))
+               (is (= 130.00 (price rule 3)))
+               (is (= 180.00 (price rule 4)))
+               (is (= 230.00 (price rule 5)))
+               (is (= 260.00 (price rule 6)))
+               (is (= 310.00 (price rule 7)))))
+    (testing "per"
+             (let [rule (checkout/per 100 0.50)]
+               (is (= 0.00 (price rule 0)))
+               (is (= 0.50 (price rule 100)))
+               (is (= 0.25 (price rule 50)))
+               (is (= 0.75 (price rule 150)))
+               (is (= 1.00 (price rule 200)))))))
