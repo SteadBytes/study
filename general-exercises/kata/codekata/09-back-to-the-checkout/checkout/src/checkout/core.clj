@@ -2,86 +2,114 @@
   (:require [clojure.spec.alpha :as s])
   (:gen-class))
 
-(s/def :rule/type keyword?)
-(defmulti rule-type :rule/type)
-
-; n items for price-1, with remaining at price-2 each
-(defmethod rule-type :for
-  [_]
-  (s/keys :req [::n ::price-1 ::price-2]))
-
-; continuous pricing; rate of n per price (extra rule type not specific in Kata)
-(defmethod rule-type :per
-  [_]
-  (s/keys :req [::n ::price]))
-
-(s/def ::pricing-rule (s/multi-spec rule-type :rule/type))
 (s/def ::name string?)
-(s/def ::quantity int?)
+(s/def ::n integer?)
+(s/def ::quantity pos?)
 (s/def ::price double?)
-(s/def ::price-1 ::price)
-(s/def ::price-2 ::price)
-(s/def ::product (s/keys :req [::name ::quantity ::pricing-rule]))
+(s/def ::for-price ::price)
+(s/def ::total ::price)
+(s/def ::products (s/map-of ::name ::quantity))
+(s/def ::input-item
+  (s/or ::name (s/cat ::name (s/or ::quantity ::n))))
 
-(s/fdef each :args (s/cat :name ::name :p ::price) :ret ::product)
-(s/fdef n-for-p :args (s/cat :name ::name :n ::quantity :p ::price) :ret ::product)
-(s/fdef per :args (s/cat :name ::name :quant ::quantity :n int? :p ::price) :ret ::product)
+(s/def :rule/type keyword?)
+(defmulti rule :rule/type)
 
-(defn each [name p]
-  {::name name ::quantity 1 ::pricing-rule {:rule/type :for ::n 1  ::price-1 p ::price-2 p}})
-(defn n-for-p [name n p]
-  {::name name ::quantity 1 ::pricing-rule {:rule/type :for ::n n  ::price-1 p ::price-2 p}})
-(defn per [name quant n p]
-  {::name name ::quantity quant ::pricing-rule {:rule/type :per ::n n ::price p}})
+; n items for ::for-price, with remaining at ::price each
+(defmethod rule :for [_] (s/keys :req [::n ::for-price ::price]))
 
-(s/fdef checkout :args (s/cat :products (s/coll-of ::product :kind vector?)))
+; Continuous pricing i.e. rate of n per price (extra rule type not specific in
+; Kata)
+(defmethod rule :per [_] (s/keys :req [::quantity ::price]))
 
-(defmulti price #(get-in % [::pricing-rule :rule/type]))
+(s/def ::pricing-rule (s/multi-spec rule :rule/type))
+(s/def ::rules (s/map-of ::name ::pricing-rule))
+(s/def ::price-fn
+  (s/fspec :args (s/cat :n-products integer?)
+           :ret double?))
+(s/def ::price-fns (s/map-of ::name ::price-fn))
+(s/def ::checkout (s/keys :req [::products ::rules ::total ::price-fns]))
+
+(s/fdef each
+  :args (s/cat :p ::price)
+  :ret ::pricing-rule)
+(s/fdef n-for-p
+  :args (s/cat :n ::n
+               :p ::price)
+  :ret ::pricing-rule)
+(s/fdef per
+  :args (s/cat :quant ::quantity
+               :n int?
+               :p ::price)
+  :ret ::pricing-rule)
+(s/fdef price :args ::pricing-rule :ret ::price-fn)
+(s/fdef checkout
+  :args (s/cat ::items-to-scan (s/coll-of ::input-item)
+               ::rules ::rules)
+  :ret ::checkout)
+(s/fdef total :args ::checkout :ret ::checkout)
+(s/fdef scan
+  :args (s/cat ::checkout ::input-item)
+  :ret ::checkout)
+
+(defn each [p] {:rule/type :for, ::n 1, ::for-price p, ::price p})
+(defn n-for-p [n p1 p2] {:rule/type :for, ::n n, ::for-price p1, ::price p2})
+(defn per [quant p] {:rule/type :per, ::quantity quant, ::price p})
+
+(defmulti price :rule/type)
 (defmethod price :per
-  [{quantity ::quantity, {n ::n, p ::price} ::pricing-rule}]
-  (/ (* quantity p) n))
+  [{rule-quant ::quantity, p ::price}]
+  (fn [quant]
+    {:pre [(or (zero? quant) (pos? quant))]}
+    (/ (* quant p) rule-quant)))
 (defmethod price :for
-  [{quantity ::quantity, {n ::n, p1 ::price-1, p2 ::price-2} ::pricing-rule}]
-  (let [r (rem quantity n)]
-    (+ (/ (* (- quantity r) p1) n) (* r p2))))
+  [{n ::n, p1 ::for-price, p2 ::price}]
+  (fn [n-products]
+    {:pre [(or (zero? n-products) (pos-int? n-products))]}
+    (let [r (rem n-products n)] (+ (/ (* (- n-products r) p1) n) (* r p2)))))
 
-(comment
-  (s/fdef combine
-    :args (s/and (s/cat :product1 ::product :product2 ::product)
-                 #(not= (get-in %1 [::pricing-rule :rule/type])
-                        (get-in %2 [::pricing-rule :rule/type])))))
-(defn combine
-  [products]
-  {:pre [(apply = (map #(get-in % [::pricing-rule :rule/type]) products))
-         (apply = (map :name products))]}
-  (assoc (first products) ::quantity (reduce + (map ::quantity products))))
+(defn total
+  [{products ::products, price-fns ::price-fns, :as co}]
+  (assoc co
+    ::total (if (empty? products)
+              0.0
+              (reduce + (map (fn [[k v]] ((get price-fns k) v)) products)))))
 
-(defn checkout-by
-  [f]
-  (fn
-    [products]
-    (let [grouped (group-by ::name products)]
-      (f (zipmap (keys grouped) (map combine (vals grouped)))))))
+(defn rule-type
+  [{rules ::rules} product-name]
+  (:rule/type (get rules product-name)))
 
-(defn transform-vals
-  [m f]
-  (zipmap (keys m) (map f (vals m))))
+(defmulti valid-scan? (fn [co [product-name _]] (rule-type co product-name)))
+; cannot have negative, or partial :for products i.e -1 TVs or 0.5 TVs
+(defmethod valid-scan? :for [_ [_ n]] (pos-int? n))
+; cannot have negative :per products i.e. -100g of oats
+(defmethod valid-scan? :per [_ [_ n]] (pos? n))
 
-(defn subtotals
-  [products]
-  ((checkout-by #(transform-vals % price)) products))
+(defmulti scan (fn [_ item] (class item)))
+(defmethod scan String
+  [co product-name]
+  ; scanning a :per rule product *requires* specifying a quantity
+  {:pre [(= (rule-type co product-name) :for)]}
+  (scan co [product-name 1]))
+(defmethod scan clojure.lang.PersistentVector
+  [co [product-name n]]
+  {:pre [(valid-scan? co [product-name n])]}
+  (total (update-in co [::products product-name] (fnil + 0) n)))
 
 (defn checkout
-  "Calculate total price of products"
-  [products]
-  (reduce + (vals (subtotals products))))
+  [items-to-scan rules]
+  (let [co {::rules rules,
+            ::price-fns (into {} (for [[k v] rules] [k (price v)])),
+            ::total 0.0}]
+    (reduce scan co items-to-scan)))
 
-
-(comment
-  (s/explain ::pricing-rule {:rule/type :per ::n 1 ::price 10.00})
-  (s/explain ::pricing-rule {:rule/type :for ::n 1 ::price-1 10.00 ::price-2 5.00})
-  (s/explain ::product (each "apples" 0.50))
-  (let [apples (each "apples" 0.50)
-        pears (n-for-p "pears" 3 1.00)
-        oats (per "oats" 1000 100 0.50)]
-    (subtotals [apples pears apples oats pears oats])))
+(comment (let [rules {"toothpaste" (n-for-p 3 2.00 1.00),
+                      "bread-loaf" (n-for-p 2 1.50 0.90),
+                      "yoghurt" (each 1.00),
+                      "oats" (per 100 2.00)}
+               co (checkout ["toothpaste" "toothpaste" "toothpaste"
+                             ["bread-loaf" 2] ["yoghurt" 2] ["oats" 450]]
+                            rules)]
+           (println (::total co))
+           (println (::total (scan co "bread-loaf")))
+           (println (::total (scan co ["oats" 50])))))
