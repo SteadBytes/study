@@ -32,3 +32,23 @@ funcCase x =
         True -> "yep"
         False -> "wut"
 ```
+
+## Function composition
+
+Higher order function that allows combining of multiple functions such that the result of applying one function is passed to the next as an argument.
+
+`.` operator
+
+```haskell
+(f . g) x = f (g x)
+```
+
+**Pointfree style** = Function composition without specifying arguments
+
+```
+Prelude> let f = negate . sum
+Prelude> f [1..5]
+-15
+```
+
+See [`arith2.hs`](./arith2.hs)
