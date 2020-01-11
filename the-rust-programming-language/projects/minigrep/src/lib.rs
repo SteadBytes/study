@@ -25,18 +25,20 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
+    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
+        args.next(); // Skip program name
+
         // Return an error instead of panicking to avoid showing extraneous
         // backtrace information to users. This is an *expected* error and should
         // be handled as such.
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
-        // Clone to allow Config to *own* the values -> args vector can safely
-        // go out of scope. Book hints at a more efficient way to achieve this
-        // that will be covered in a later chapter.
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file name"),
+        };
 
         // env::var() returns error if unset -> use .is_err() to get a bool
         // TODO: Use CLI arg to set this instead of/in addition to env var
@@ -51,14 +53,7 @@ impl Config {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-
-    results
+    contents.lines().filter(|l| l.contains(query)).collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
