@@ -14,3 +14,5 @@ __pycache__/
 
 # TPP source code from https://pragprog.com/titles/tpp20/source_code
 source_code/
+
+.vagrant/

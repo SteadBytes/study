@@ -1,0 +1,14 @@
+VAGRANTFILE_VERSION = "2"
+
+$provision_external = <<SCRIPT
+sudo apt-get -qq update
+sudo apt-get install -q -y build-essential curl
+echo 'curl https://sh.rustup.rs -sSf | sh -s -- -y;' | su vagrant
+SCRIPT
+
+Vagrant.configure(VAGRANTFILE_VERSION) do |config|
+
+    config.vm.box = "generic/ubuntu1804"
+    config.vm.synced_folder ".", "/ch09/", type: 'nfs', nfs_udp: false, nfs_version: 4
+    config.vm.provision "shell", inline: $provision_external
+end
