@@ -1,0 +1,14 @@
+[package]
+name = "fledgeos"
+version = "0.1.0"
+authors = ["Ben Steadman <steadmanben1@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bootloader = "0.7"
+x86_64 = "0.8"
+
+[package.metadata.bootimage]
+default-target = "fledge.json"
