@@ -1,3 +1,4 @@
+pub mod integer_to_roman;
 pub mod palindrome_number;
 pub mod reverse_integer;
 pub mod roman_to_integer;
