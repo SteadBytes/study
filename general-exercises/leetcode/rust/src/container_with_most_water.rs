@@ -14,7 +14,7 @@ impl Solution {
 
         while l < r {
             let width = (r - l) as i32;
-            if height[l] < height[r] {
+            if height[l] <= height[r] {
                 max_area = max(max_area, height[l] * width);
                 l += 1;
             } else {

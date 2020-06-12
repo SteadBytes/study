@@ -1,5 +1,6 @@
 pub mod container_with_most_water;
 pub mod integer_to_roman;
+pub mod next_greater_element_i;
 pub mod palindrome_number;
 pub mod reverse_integer;
 pub mod roman_to_integer;
