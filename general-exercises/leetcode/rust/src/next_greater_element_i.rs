@@ -14,7 +14,7 @@ impl Solution {
     /// result produced from a single pass of `nums1`.
     ///
     /// NGN of `nums2[i]` is `nums2[i + 1]` *iff* `nums2[i + 1] is greater
-    /// then `nums2[i]`. Otherwise, the NGN of *both* `nums2[i]` and `nums2[i + 1]`
+    /// than `nums2[i]`. Otherwise, the NGN of *both* `nums2[i]` and `nums2[i + 1]`
     /// (if present at all) is within `nums2[(i + 2)..]`. In other words, each
     /// element of `nums2` is either:
     /// - NGN of the previous element *only*
