@@ -17,8 +17,9 @@ impl Solution {
     /// than `nums2[i]`. Otherwise, the NGN of *both* `nums2[i]` and `nums2[i + 1]`
     /// (if present at all) is within `nums2[(i + 2)..]`. In other words, each
     /// element of `nums2` is either:
-    /// - NGN of the previous element *only*
     /// - NGN of *all* elements in a preceding *decreasing* sequence
+    /// - NGN of the previous element *only*
+    ///     - `n=1` case of the previous point
     /// - Not an NGN at all
     ///
     /// For example:

@@ -4,31 +4,62 @@ impl Solution {
     /// Next Greater Number (NGN) of an element `x` in a **circular buffer**
     /// `nums` is the first greater number to its *traversing-order* next in
     /// the buffer.
+    ///
     /// - Circular searching -> NGN may be before `x` in a standard (non-circular)
     ///   traversal of `nums`.
     ///
-    /// # Brute Force Algorithm
+    /// # `O(n)` Stack-based Algorithm
     ///
-    /// For each element `x` at index `i` in `nums`, perform a circular
-    /// search from `nums[i] -> nums[i-1]`.
-    /// - `x' > x` -> NGN = `x'`
-    /// - Otherwise no NGN
+    /// As in Next Greater Element I, the key observation is that `nums[i]` may
+    /// be the NGN of a decreasing sub-sequence of elements *before* it in
+    /// traversal order. However, due to the circular buffer in this case, 2
+    /// standard traversals (a full circular traversal) are required to
+    /// determine all NGNs.
+    ///
+    /// - `nums[i]` (in a non-circular traversal) could be the NGN for elements
+    ///    in *both* `nums[..i]` and nums[i..n]`.
+    ///
+    /// Again, a stack representing a decreasing sub-sequence of elements is
+    /// constructed. This time, however, the stack stores the *indices* of
+    /// the sub-sequence (as opposed to the elements themselves) and is used
+    /// to place the current value in a traversal into the correct position in
+    /// the result vector.
+    ///
+    /// TODO: Is there a *functional* approach with equal/close efficiency?
     pub fn next_greater_elements(nums: Vec<i32>) -> Vec<i32> {
-        debug_assert!(
-            nums.len() <= 10000,
-            "Problem description states nums.len() <= 10000"
-        );
+        let n = nums.len();
 
-        nums.iter()
-            .enumerate()
-            .map(|(i, x)| {
-                *nums[i..]
-                    .iter()
-                    .chain(nums[..i].iter())
-                    .find(|&&y| y > *x)
-                    .unwrap_or(&-1)
-            })
-            .collect()
+        debug_assert!(n <= 10000, "Problem description states nums.len() <= 10000");
+
+        let process_candidate_ngn =
+            |idx_stack: &mut Vec<usize>, result: &mut Vec<i32>, candidate: i32| {
+                while let Some(&y) = idx_stack.last() {
+                    if nums[y] < candidate {
+                        result[idx_stack.pop().unwrap()] = candidate;
+                    } else {
+                        break;
+                    }
+                }
+            };
+
+        // Initialising to `-1` allows traversals to focus on *finding* NGNs;
+        // overwriting as discovered
+        let mut result: Vec<i32> = vec![-1; n];
+        let mut idx_stack: Vec<usize> = vec![];
+
+        // Fill NGN positions where a circular traversal is *not* needed e.g.
+        // `nums[i]` is the NGN of one or more elements in `nums[0..i]`
+        for (i, x) in nums.iter().enumerate() {
+            process_candidate_ngn(&mut idx_stack, &mut result, *x);
+            idx_stack.push(i);
+        }
+
+        // Fill NGN positions where a circular traversal *is* needed e.g.
+        // `nums[i]` is the NGN of one or more elements in `nums[i..n]`
+        for x in nums.iter() {
+            process_candidate_ngn(&mut idx_stack, &mut result, *x);
+        }
+        result
     }
 }
 
