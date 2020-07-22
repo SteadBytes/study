@@ -1,6 +1,6 @@
 import unittest
 
-from sgf_parsing import parse, SgfTree, SgfParser
+from sgf_parsing import Peekable, SgfTree, Token, TokenType, parse, tokenise
 
 # Tests adapted from `problem-specifications//canonical-data.json` @ v1.2.0
 
@@ -79,26 +79,68 @@ class SgfParsingTest(unittest.TestCase):
         return self.assertRaisesRegex(exception, r".+")
 
 
-class TestScanner(unittest.TestCase):
-        self.assertEqual(
-            SgfParser(";A[bc]B[de]")._node(), [("A", ["bc"]), ("B", ["de"])]
-        )
+class TokenisationTest(unittest.TestCase):
+    def test_Peekable(self):
+        s = "abc"
+        it = Peekable(iter(s))
 
-    def test_sequence(self):
-        self.assertEqual(
-            SgfParser(";A[bc];B[de]")._sequence(), [[("A", ["bc"])], [("B", ["de"])]]
-        )
+        self.assertEqual(it.peek(), "a")
+        self.assertEqual(it.peek(), "a")
+        self.assertEqual(next(it), "a")
 
-    def test_tree(self):
-        self.assertEqual(
-            SgfParser("(;A[bc])")._tree(), SgfTree(properties={"A": ["bc"]})
-        )
-        self.assertEqual(
-            SgfParser("(;A[bc](;B[de]))")._tree(),
-            SgfTree(
-                properties={"A": ["bc"]}, children=[SgfTree(properties={"B": ["de"]})]
+        self.assertEqual(it.peek(), "b")
+        self.assertEqual(it.peek(), "b")
+        self.assertEqual(next(it), "b")
+
+        self.assertEqual(it.peek(), "c")
+        self.assertEqual(next(it), "c")
+
+        with self.assertRaises(StopIteration):
+            next(it)
+
+    def test_tokenise(self):
+        test_cases = [
+            (
+                "[]();",
+                [
+                    Token(TokenType.VALUE_START, "[", 0, 1),
+                    Token(TokenType.VALUE_END, "]", 1, 2),
+                    Token(TokenType.TREE_START, "(", 2, 3),
+                    Token(TokenType.TREE_END, ")", 3, 4),
+                    Token(TokenType.NODE_DELIM, ";", 4, 5),
+                ],
             ),
-        )
+            (
+                "A(b;",
+                [
+                    Token(TokenType.TEXT, "A", 0, 1),
+                    Token(TokenType.TREE_START, "(", 1, 2),
+                    Token(TokenType.TEXT, "b", 2, 3),
+                    Token(TokenType.NODE_DELIM, ";", 3, 4),
+                ],
+            ),
+            (
+                "Ab(cDeF;",
+                [
+                    Token(TokenType.TEXT, "Ab", 0, 2),
+                    Token(TokenType.TREE_START, "(", 2, 3),
+                    Token(TokenType.TEXT, "cDeF", 3, 7),
+                    Token(TokenType.NODE_DELIM, ";", 7, 8),
+                ],
+            ),
+            (
+                "Ab(cDeF\\];",
+                [
+                    Token(TokenType.TEXT, "Ab", 0, 2),
+                    Token(TokenType.TREE_START, "(", 2, 3),
+                    Token(TokenType.TEXT, "cDeF]", 3, 9),
+                    Token(TokenType.NODE_DELIM, ";", 9, 10),
+                ],
+            ),
+        ]
+        for input_string, tokens in test_cases:
+            with self.subTest(input_string=input_string):
+                self.assertListEqual(list(tokenise(iter(input_string))), tokens)
 
 
 if __name__ == "__main__":

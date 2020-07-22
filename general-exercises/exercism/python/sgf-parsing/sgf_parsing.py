@@ -10,6 +10,7 @@ SGF
     - Unique keys
     - Multiple values per key
 
+
 Examples
 ========
 
@@ -57,23 +58,66 @@ Single tree:
             - value = "ab"
 
 
+Grammar
+=======
 
-Grammar (EBNF)
-==============
-
-TODO: Fix this
-
-sgf_tree ::= tree*
+sgf_tree ::= tree+
 tree ::= "(" sequence tree* ")"
 sequence ::= node+
-node ::= ";" property*
+node ::= ";" property+
 property ::= key value+
-key ::= upper_char [upper_char | digit]?
+key ::= upper_char [lower_char | digit]?
 value ::= "[" text "]"
 text ::= (char; "\\]" = "]", "\\\\" = "\\")*
 """
 
-from typing import DefaultDict
+from __future__ import annotations
+
+from enum import Enum
+from typing import (
+    DefaultDict,
+    Generic,
+    Iterable,
+    Iterator,
+    NamedTuple,
+    TypeVar,
+)
+
+TokenType = Enum(
+    "TokenType",
+    ["TREE_START", "TREE_END", "VALUE_START", "VALUE_END", "NODE_DELIM", "TEXT"],
+)
+
+
+class Token(NamedTuple):
+    type: TokenType
+    string: str
+    start: int
+    end: int
+
+
+# Semantic indication that a single character is expected (e.g. `str` of length
+# 1). *Not* enforced at runtime or during type checking.
+Char = str
+TokenStream = Iterator[Token]
+
+NON_TEXT_TOKEN_MAP = {
+    "(": TokenType.TREE_START,
+    ")": TokenType.TREE_END,
+    "[": TokenType.VALUE_START,
+    "]": TokenType.VALUE_END,
+    ";": TokenType.NODE_DELIM,
+}
+
+ESCAPE = "\\"
+
+
+T = TypeVar("T")
+
+
+# > White spaces other than linebreaks are converted to space
+# https://www.red-bean.com/sgf/sgf4.html#text
+WS_TRANS = str.maketrans("\t\v", "  ")
 
 
 class SgfTree:
@@ -103,107 +147,169 @@ class SgfTree:
         return not self == other
 
 
-class SourceStream:
-    def __init__(self, input_string: str):
-        self.src = input_string
-        self.pos = -1
+class Peekable(Generic[T]):
+    def __init__(self, it: Iterable[T]):
+        self.it = iter(it)
+        self.peeked = False
 
-    def __next__(self) -> str:
-        self.pos += 1
-        return self.src[self.pos]
+    def __next__(self) -> T:
+        if self.peeked:
+            self.peeked = False
+            return self.head
+        else:
+            return next(self.it)
 
-    def __iter__(self) -> Iterator[str]:
+    def peek(self) -> T:
+        if not self.peeked:
+            self.peeked = True
+            self.head = next(self.it)
+        return self.head
+
+    def __iter__(self) -> Peekable[T]:
         return self
 
 
-def _value(curr_token: str, stream: SourceStream, trans_tbl=WS_TRANS):
-    if curr_token != VALUE_START:
+def tokenise(src: Iterable[Char]) -> TokenStream:
+    """Yields ``Token``s parsed from ``src``.
+
+    Note: I made this harder for myself by using ``Iterable[Char]`` instead of
+    ``str``, however I feel this makes for a more useable implementation e.g. this
+    can lazily consume and parse instead of loading everything into a single
+    string.
+    """
+    # Rename required by MyPy https://github.com/python/mypy/issues/1174
+    src_ = Peekable(enumerate(src))
+
+    while True:
+        try:
+            pos, ch = next(src_)
+        except StopIteration:
+            break
+
+        if ch in NON_TEXT_TOKEN_MAP:
+            yield Token(NON_TEXT_TOKEN_MAP[ch], ch, pos, pos + 1)
+        else:
+            start = pos
+            chars = []
+            try:
+                while True:
+                    if ch == "\\":
+                        pos, ch = next(src_)
+                    chars.append(ch)
+                    if src_.peek()[1] in NON_TEXT_TOKEN_MAP:
+                        break
+                    else:
+                        pos, ch = next(src_)
+            finally:
+                yield Token(TokenType.TEXT, "".join(chars), start, pos + 1)
+
+
+def _value(token: Token, tokens: TokenStream, trans_tbl=WS_TRANS):
+    if token.type != TokenType.VALUE_START:
         raise ValueError(
-            f"Invalid input at position {stream.pos}: expected {VALUE_START}, found {curr_token}"
+            f"Invalid input at position {token.start}: expected {TokenType.VALUE_START}, found {token}"
+        )
+    token = next(tokens)
+    if token.type != TokenType.TEXT:
+        raise ValueError(
+            f"Invalid input at position {token.start}: expected {TokenType.TEXT}, found {token}"
+        )
+    return next(tokens), token.string.translate(trans_tbl)
+
+
+def _key(token: Token, tokens: TokenStream):
+    if token.type != TokenType.TEXT:
+        raise ValueError(
+            f"Invalid input at position {token.start}: expected {TokenType.TEXT}, found {token}"
         )
 
-    curr_token = next(stream)
-    val_tokens = []
-    while curr_token != VALUE_END:
-        ch = next(stream) if curr_token == ESCAPE else curr_token
-        val_tokens.append(ch)
-        curr_token = next(stream)
-    return "".join(val_tokens).translate(trans_tbl)
-
-
-def _key(curr_token: str, stream: SourceStream):
-    if not curr_token.isupper():
+    key = token.string
+    if len(key) != 1 or not key.isupper():
         raise ValueError(
-            f"Invalid input at position {stream.pos}: expected upper case char, found {curr_token}"
+            f"Invalid input at position {token.start}: expected upper case char, found {token}"
         )
 
-    key = curr_token
-    curr_token = next(stream)
+    token = next(tokens)
 
-    if curr_token != VALUE_START:
+    if token.type != TokenType.VALUE_START:
         raise ValueError(
-            f"Invalid input at position {stream.pos}: expected {VALUE_START}, found {curr_token}"
+            f"Invalid input at position {token.start}: expected {TokenType.VALUE_START}, found {token}"
         )
 
-    return (curr_token, key)
+    return (token, key)
 
 
-def _properties(curr_token: str, stream: SourceStream):
+def _properties(token: Token, tokens: TokenStream):
     properties = DefaultDict(list)
-    while curr_token not in (TREE_START, TREE_END, NODE_DELIM):
-        curr_token, key = _key(curr_token, stream)
+    while token.type not in (
+        TokenType.TREE_START,
+        TokenType.TREE_END,
+        TokenType.NODE_DELIM,
+    ):
+        token, key = _key(token, tokens)
 
-        while curr_token == VALUE_START:
-            val = _value(curr_token, stream)
+        while token.type == TokenType.VALUE_START:
+            token, val = _value(token, tokens)
             properties[key].append(val)
-            curr_token = next(stream)
+            if token.type != TokenType.VALUE_END:
+                raise ValueError(
+                    f"Invalid input at position {token.start}: expected {TokenType.VALUE_END}, found {token}"
+                )
 
-    return curr_token, properties
+            token = next(tokens)
+
+    return token, properties
 
 
-def _node(curr_token: str, stream: SourceStream):
-    if curr_token != NODE_DELIM:
+def _node(token: Token, tokens: TokenStream):
+    if token.type != TokenType.NODE_DELIM:
         raise ValueError(
-            f"Invalid input at position {stream.pos}: expected {NODE_DELIM}, found {curr_token}"
+            f"Invalid input at position {token.start}: expected {TokenType.NODE_DELIM}, found {token}"
         )
-    curr_token, properties = _properties(next(stream), stream)
-    return curr_token, SgfTree(properties)
+    token, properties = _properties(next(tokens), tokens)
+    return token, SgfTree(properties)
 
 
-def _tree(curr_token: str, stream: SourceStream):
-    if curr_token != TREE_START:
+def _tree(token: Token, tokens: TokenStream):
+    if token.type != TokenType.TREE_START:
         raise ValueError(
-            f"Invalid input at position {stream.pos}: expected {TREE_START}, found {curr_token}"
+            f"Invalid input at position {token.start}: expected {TokenType.TREE_START}, found {token}"
         )
 
     root = None
-    curr_token = next(stream)
+    token = next(tokens)
 
-    while curr_token != TREE_END:
-        if curr_token == NODE_DELIM:
-            curr_token, node = _node(curr_token, stream)
+    while token.type != TokenType.TREE_END:
+        if token.type == TokenType.NODE_DELIM:
+            token, node = _node(token, tokens)
             if root is None:
                 root = node
             else:
                 root.children.append(node)
-        elif curr_token == TREE_START:
-            root.children.append(_tree(curr_token, stream))
-            curr_token = next(stream)
+        elif token.type == TokenType.TREE_START:
+            assert root is not None
+            root.children.append(_tree(token, tokens))
+            token = next(tokens)
         else:
             raise ValueError(
-                f"Invalid input at position {stream.pos}: expected one of ({TREE_DELIM}, {TREE_START}), found {curr_token}"
+                f"Invalid input at position {token.start}: expected one of ({TokenType.NODE_DELIM}, {TokenType.TREE_START}), found {token}"
             )
     return root
 
 
-def parse(input_string):
+def parse(input_string: str):
+    """Parse an ``SGFTree`` from ``input_string``
+
+    Uses recursive-descent parsing to build an ``SGFTree`` *starting* at the
+    root node.
+    """
     if not input_string:
         raise ValueError("Empty input")
 
-    stream = SourceStream(input_string)
+    tokens = tokenise(input_string)
 
     try:
-        root = _tree(next(stream), stream)
+        root = _tree(next(tokens), tokens)
     except StopIteration as e:
         raise ValueError("Incomplete SGF tree definition") from e
 
