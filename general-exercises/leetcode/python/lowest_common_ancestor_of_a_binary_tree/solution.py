@@ -1,6 +1,7 @@
 from __future__ import annotations
+from itertools import dropwhile
 
-from typing import Generic, Iterator, Optional, TypeVar
+from typing import Generic, Iterator, Optional, TypeVar, Dict
 
 T = TypeVar("T")
 
@@ -31,37 +32,23 @@ class Solution:
         rooted at ``root``.
 
         LCA is found at the first intersection of the paths from ``p`` and
-        ``q`` to ``root``. Starting from ``root``, this solution recursively
-        searches left *and* right subtrees for ``p`` and ``q``. At any level
-        of the search, there are 3 possible cases:
+        ``q`` to ``root``. This solution constructs a mapping from each node
+        to its parent in a Depth First Search. The paths from ``p`` and ``q``
+        are then constructed by looking up parents in the mapping until the
+        root is reached. The LCA is the first node in both of these paths.
 
-            1. The current node *is* ``p`` or ``q``.
-
-            2. Both ``p`` and ``q`` are found in the left/right subtrees of the
-               the current node.
-
-            3. One of ``p`` and ``q`` are found in either the left/right
-               subtree of the current node.
-
-        In case 1, the current search branch of the recursion tree is complete
-        and the current node is returned.
-
-        In case 2, both the left and right subtree searches successfully found
-        ``p`` and ``q``, therefore the LCA *must* be the current node.
-
-        In case 3, the node that was not found in the subtree searches must
-        be *below* the node that was found, therefore the found node is the
-        LCA.
-
-        This recursion is an ``O(n)`` solution, where the worst case arises
-        from ``p`` and ``q`` being leaf nodes in an unbalanced tree e.g
-        ``p`` = 6 and ``q``= 2 in the following tree:
+        This is an ``O(n)`` solution, where the worst case arises from ``p``
+        and ``q`` being leaf nodes in an unbalanced tree e.g ``p`` = 6 and
+        ``q``= 2 in the following tree:
 
                                        3
                                         5
                                          1
                                           4
                                          6 2
+
+       To be more specific, this is ``O(h)`` where ``h`` is the height of the
+       tree (of which the worst case is ``O(n)``).
 
         Note: This algorithm relies on the assumptions given in the problem
         description and is therfore not (at least without modification)
@@ -72,24 +59,32 @@ class Solution:
         - ``p`` and ``q`` are different and both values will exist in the
           binary tree.
         """
-        # TODO: Non-recursive implementation
-        def search(node) -> Optional[TreeNode]:
 
-            # Case 1
-            if node is p or node is q:
-                return node
+        stack = [root]
+        parents: Dict[TreeNode, Optional[TreeNode]] = {root: None}
 
-            # Search for p and q in left/right subtrees
-            l = search(node.left) if node.left else None
-            r = search(node.right) if node.right else None
+        # DFS to build mapping from nodes to parents. The search can be
+        # terminated early once both p and q have been found as only the path
+        # from these nodes to the root is required.
+        while p not in parents or q not in parents:
+            node = stack.pop()
+            for child in filter(None, (node.left, node.right)):
+                parents[child] = node
+                stack.append(child)
 
-            # Case 2
-            if l and r:
-                return node
+        # Since node values are unique, the ordering of the path itself doesn't
+        # matter - only the presence of a common ancestor node. So a set is
+        # used here for fast membership tests.
+        p_ancestors = set(self._construct_path(parents, p))
 
-            # Case 3
-            return l or r
+        # Find the first ancestor of q that is also an ancestor of p
+        return next(
+            dropwhile(lambda n: n not in p_ancestors, self._construct_path(parents, q))
+        )
 
-        lca = search(root)
-        assert lca
-        return lca
+    def _construct_path(self, parents, start) -> Iterator[TreeNode]:
+        node = start
+        while node is not None:
+            yield node
+            node = parents[node]
+
