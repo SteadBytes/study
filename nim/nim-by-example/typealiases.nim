@@ -1,6 +1,7 @@
 # Types are declared within `type` sections
 # Type aliases are **the same as the type being aliased**
 # - *Not* incompatible in any way
+# - See Distinct Types for incompatible type safety
 
 # `type` allows multiple types to be declared within a single section
 type
