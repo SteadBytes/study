@@ -11,15 +11,28 @@ Options:
   -h, --help  show this help
 """
 
-proc count(strm: FileStream): int =
+proc iterLines(stream: Stream): iterator(): string =
+  result = iterator(): string =
+    while not stream.atEnd:
+      yield stream.readLine()
+
+proc wc*(lines: iterator(): string): int =
+  ## Count words in `lines`. A word is defined as a sequence of non-whitespace
+  ## characters.
   result = 0
-  for l in strm.lines():
+  for l in lines():
     for w in l.split():
       result += 1
 
+proc wc*(strm: FileStream): int =
+  wc(iterLines(strm))
+
+proc wc*(f: File): int =
+  wc(newFileStream(f))
+
 proc main() =
   if paramCount() == 0 or (paramCount() == 1 and paramStr(1) == "-"):
-    echo count(newFileStream(stdin))
+    echo wc(stdin)
     return
 
   var total = 0
@@ -32,7 +45,7 @@ proc main() =
         openFileStream(key)
       except:
         quit(&"cannot open {key}: {getCurrentExceptionMsg()}")
-      let n = count(strm)
+      let n = wc(strm)
       total += n
       echo n, " ", key
     of cmdShortOption, cmdLongOption:
