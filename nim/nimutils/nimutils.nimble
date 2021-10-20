@@ -5,8 +5,9 @@ author        = "Ben Steadman"
 description   = "Re-implementing basic coreutils in Nim"
 license       = "MIT"
 srcDir        = "src"
+binDir        = "bin"
 installExt    = @["nim"]
-bin           = @["wc"]
+bin           = @["wc", "du"]
 
 
 # Dependencies
