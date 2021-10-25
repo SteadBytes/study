@@ -19,35 +19,39 @@ proc report(size: BiggestInt, path: string, apparent_size: bool = false) =
   let size = if apparent_size: size else: size.blocks
   echo &"{size} {path}"
 
-proc du*(path: string; apparent_size: bool = false, depth = 0): BiggestInt =
-  var statbuf: Stat
-  if lstat(path, statbuf) < 0:
-    # FIXME
-    raiseOSError(osLastError(), path)
+proc du*(path: string; apparent_size: bool = false): BiggestInt =
 
-  # TODO: Optionally handle symlinks?
-
-  var sum = BiggestInt(if apparent_size: statbuf.st_size else: statbuf.st_blocks)
-  if S_ISDIR(statbuf.st_mode):
-    # Adapted from os.WalkDir https://github.com/nim-lang/Nim/blob/80c8107c560d91afae2c7596ab196cb0f7c30860/lib/pure/os.nim#L2148
-    var dir = opendir(path)
-    if dir == nil:
+  proc recurse(path: string, depth = 0): BiggestInt =
+    var statbuf: Stat
+    if lstat(path, statbuf) < 0:
+      # FIXME
       raiseOSError(osLastError(), path)
-    while true:
-      var entry = readdir(dir)
-      if entry == nil: break
-      when defined(nimNoArrayToCstringConversion):
-        var name = $cstring(addr entry.d_name)
-      else:
-        var name = $x.d_name.cstring
-      if name != "." and name != "..":
-        let newpath = path / name
-        sum += du(newpath, apparent_size = apparent_size, depth = depth+1)
-  elif depth != 0:
-    # Don't report individual files
+
+    # TODO: Optionally handle symlinks?
+
+    var sum = BiggestInt(if apparent_size: statbuf.st_size else: statbuf.st_blocks)
+    if S_ISDIR(statbuf.st_mode):
+      # Adapted from os.WalkDir https://github.com/nim-lang/Nim/blob/80c8107c560d91afae2c7596ab196cb0f7c30860/lib/pure/os.nim#L2148
+      var dir = opendir(path)
+      if dir == nil:
+        raiseOSError(osLastError(), path)
+      while true:
+        var entry = readdir(dir)
+        if entry == nil: break
+        when defined(nimNoArrayToCstringConversion):
+          var name = $cstring(addr entry.d_name)
+        else:
+          var name = $x.d_name.cstring
+        if name != "." and name != "..":
+          let newpath = path / name
+          sum += recurse(newpath, depth = depth+1)
+    elif depth != 0:
+      # Don't report individual files
+      return sum
+    report(sum, path, apparent_size = apparent_size)
     return sum
-  report(sum, path, apparent_size = apparent_size)
-  return sum
+
+  recurse(path)
 
 proc main() =
   var files: seq[string]
