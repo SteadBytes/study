@@ -1,4 +1,4 @@
-import os, strformat, parseopt, posix
+import os, strformat, parseopt, posix, sugar
 
 const usage = """
 Usage:
@@ -16,6 +16,7 @@ type
   Options* = object
     apparent_size*: bool
     show_total*: bool
+  WalkFunc* = (path: string, size: BiggestInt) -> void 
 
 proc blocks*(size: BiggestInt): BiggestInt =
   size shr 1
@@ -24,7 +25,7 @@ proc report(size: BiggestInt, path: string, apparent_size: bool = false) =
   let size = if apparent_size: size else: size.blocks
   echo &"{size} {path}"
 
-proc du*(path: string; opts = Options()): BiggestInt =
+proc du*(path: string, f: WalkFunc; opts = Options()): BiggestInt =
 
   proc recurse(path: string, depth = 0): BiggestInt =
     var statbuf: Stat
@@ -53,7 +54,7 @@ proc du*(path: string; opts = Options()): BiggestInt =
     elif depth != 0:
       # Don't report individual files
       return sum
-    report(sum, path, apparent_size = opts.apparent_size)
+    f(path, sum)
     return sum
 
   recurse(path)
@@ -85,12 +86,14 @@ proc main() =
   if files.len() == 0:
     files.add(".")
 
+  let f = (path: string, sum: BiggestInt) => report(sum, path, apparent_size=opts.apparent_size)
+
   var total = BiggestInt(0)
-  for f in files:
-    total += du(f, opts=opts)
+  for path in files:
+    total += du(path, f, opts=opts)
 
   if opts.show_total:
-    report(total, "total", apparent_size = opts.apparent_size)
+    f("total", total)
 
 when isMainModule:
   main()

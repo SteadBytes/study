@@ -1,5 +1,5 @@
 import unittest, utils
-import os, osproc, strutils, macros, strformat
+import os, osproc, strutils, macros, strformat, sugar
 
 import du
 
@@ -14,11 +14,12 @@ proc duSize(duOut: string): BiggestInt =
     .split()[0]
     .parseInt()
 
+# TODO: Cache oracle results? 
 template duOracle(tmpdir: string, body: untyped): untyped =
   check dirExists(tmpdir)
   try:
     body
-    check du(tmpdir).blocks == duSize(execDu(workingDir = dir))
+    check du(tmpdir, (path: string, sum: BiggestInt) => (discard)).blocks == duSize(execDu(workingDir = dir))
   finally:
     removeDir(tmpdir)
 
@@ -39,7 +40,7 @@ suite "du oracle tests":
     let outp = execDu(args = ["--version"])
     if not outp.contains("du (GNU coreutils)"):
       echo "warning: unable to detect whether 'du' on PATH is GNU coreutils"
-  except OSError as e:
+  except OSError:
     echo "GNU coreutils is not on PATH"
     fail()
 
@@ -83,3 +84,4 @@ suite "du oracle tests":
       createDir(sub2)
       writeFile(sub2 / "e.txt", "a")
       writeFile(sub2 / "f.txt", "test")
+
