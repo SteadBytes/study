@@ -12,6 +12,11 @@ Options:
 With no FILE, report file system space for the current directory.
 """
 
+type
+  Options* = object
+    apparent_size*: bool
+    show_total*: bool
+
 proc blocks*(size: BiggestInt): BiggestInt =
   size shr 1
 
@@ -19,7 +24,7 @@ proc report(size: BiggestInt, path: string, apparent_size: bool = false) =
   let size = if apparent_size: size else: size.blocks
   echo &"{size} {path}"
 
-proc du*(path: string; apparent_size: bool = false): BiggestInt =
+proc du*(path: string; opts = Options()): BiggestInt =
 
   proc recurse(path: string, depth = 0): BiggestInt =
     var statbuf: Stat
@@ -29,7 +34,7 @@ proc du*(path: string; apparent_size: bool = false): BiggestInt =
 
     # TODO: Optionally handle symlinks?
 
-    var sum = BiggestInt(if apparent_size: statbuf.st_size else: statbuf.st_blocks)
+    var sum = BiggestInt(if opts.apparent_size: statbuf.st_size else: statbuf.st_blocks)
     if S_ISDIR(statbuf.st_mode):
       # Adapted from os.WalkDir https://github.com/nim-lang/Nim/blob/80c8107c560d91afae2c7596ab196cb0f7c30860/lib/pure/os.nim#L2148
       var dir = opendir(path)
@@ -48,14 +53,14 @@ proc du*(path: string; apparent_size: bool = false): BiggestInt =
     elif depth != 0:
       # Don't report individual files
       return sum
-    report(sum, path, apparent_size = apparent_size)
+    report(sum, path, apparent_size = opts.apparent_size)
     return sum
 
   recurse(path)
 
 proc main() =
   var files: seq[string]
-  var apparent_size, show_total = false
+  var opts: Options
   for kind, key, value in getOpt():
     case kind
     of cmdEnd: doAssert(false) # not possible with getOpt
@@ -67,24 +72,25 @@ proc main() =
       # [OPTIONS]
       case key:
         of "b":
-          apparent_size = true
+          opts.apparent_size = true
         of "c":
-          show_total = true
+          opts.show_total = true
         of "h", "help":
           echo usage
           return
         else:
           quit(&"Unknown option '{key}'\nTry 'du --help' for more information.", 1)
 
+  # Default to current directory
   if files.len() == 0:
     files.add(".")
 
   var total = BiggestInt(0)
   for f in files:
-    total += du(f, apparent_size = apparent_size)
+    total += du(f, opts=opts)
 
-  if show_total:
-    report(total, "total", apparent_size = apparent_size)
+  if opts.show_total:
+    report(total, "total", apparent_size = opts.apparent_size)
 
 when isMainModule:
   main()
