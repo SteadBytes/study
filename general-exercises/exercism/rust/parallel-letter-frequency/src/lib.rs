@@ -1,3 +1,4 @@
+use crossbeam;
 use std::{collections::HashMap, iter::repeat, sync::mpsc, thread};
 
 pub fn frequency(input: &[&str], worker_count: usize) -> HashMap<char, usize> {
@@ -17,16 +18,18 @@ pub fn frequency(input: &[&str], worker_count: usize) -> HashMap<char, usize> {
         .chain(repeat(chunk_size).take(task_count - remainder));
 
     let (tx, rx) = mpsc::channel();
-    let mut i = 0;
-    for n in sizes {
-        let tx = tx.clone();
-        // TODO: Avoid copying
-        let chunk: Vec<String> = input[i..i + n].iter().map(|s| (*s).to_string()).collect();
-        i += n;
-        thread::spawn(move || {
-            tx.send(count(&chunk)).unwrap();
-        });
-    }
+    crossbeam::scope(|scope| {
+        let mut i = 0;
+        for n in sizes {
+            let tx = tx.clone();
+            let chunk = &input[i..i + n];
+            i += n;
+            scope.spawn(move |_| {
+                tx.send(count(chunk)).unwrap();
+            });
+        }
+    })
+    .unwrap();
 
     for _ in 0..task_count {
         let m = rx.recv().unwrap();
@@ -37,7 +40,7 @@ pub fn frequency(input: &[&str], worker_count: usize) -> HashMap<char, usize> {
     res
 }
 
-fn count(input: &[String]) -> HashMap<char, usize> {
+fn count(input: &[&str]) -> HashMap<char, usize> {
     let mut map = HashMap::new();
 
     for line in input {

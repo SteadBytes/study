@@ -2,3 +2,6 @@
 edition = "2021"
 name = "parallel-letter-frequency"
 version = "0.0.0"
+
+[dependencies]
+crossbeam = "0.8.1"
