@@ -1,25 +1,34 @@
-use std::{collections::HashMap, sync::mpsc, thread};
+use std::{collections::HashMap, iter::repeat, sync::mpsc, thread};
 
 pub fn frequency(input: &[&str], worker_count: usize) -> HashMap<char, usize> {
     let mut res = HashMap::new();
     if input.is_empty() {
         return res;
     }
+    // Evenly distribute n elements amongst k threads:
+    // - first n % k threads -> 1 + n / k items
+    // - remaining threads -> n / k items
+    let n = input.len();
+    let task_count = std::cmp::min(n, worker_count);
+    let chunk_size: usize = n / task_count;
+    let remainder = n % task_count;
+    let sizes = repeat(chunk_size + 1)
+        .take(remainder)
+        .chain(repeat(chunk_size).take(task_count - remainder));
+
     let (tx, rx) = mpsc::channel();
-    let mut workers = 0;
-    // TODO: Distribute work more evenly amongst threads
-    let chunk_size = (input.len() + worker_count - 1) / worker_count;
-    for chunk in input.chunks(chunk_size) {
-        workers += 1;
+    let mut i = 0;
+    for n in sizes {
         let tx = tx.clone();
         // TODO: Avoid copying
-        let chunk: Vec<String> = chunk.iter().map(|s| (*s).to_string()).collect();
+        let chunk: Vec<String> = input[i..i + n].iter().map(|s| (*s).to_string()).collect();
+        i += n;
         thread::spawn(move || {
             tx.send(count(&chunk)).unwrap();
         });
     }
 
-    for _ in 0..workers {
+    for _ in 0..task_count {
         let m = rx.recv().unwrap();
         for (k, v) in m.into_iter() {
             *res.entry(k).or_insert(0) += v;
