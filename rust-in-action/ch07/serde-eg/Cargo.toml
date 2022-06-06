@@ -9,6 +9,6 @@ edition = "2018"
 [dependencies]
 bincode = "1"
 serde = "1"
-serde_cbor = "0.8"
+serde_cbor = "0.10"
 serde_derive = "1"
 serde_json = "1"
